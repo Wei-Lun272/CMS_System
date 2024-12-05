@@ -76,6 +76,13 @@ public class Site {
     }
 
 
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
     public void setLatitude(BigDecimal latitude) {
         this.latitude = latitude;

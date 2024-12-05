@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
     @Column(name = "name",nullable = false)
     private String materialName;
     @Enumerated(EnumType.STRING)
