@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -15,11 +14,10 @@ import java.util.Optional;
 
 @Service
 public class MaterialService {
-    @Autowired
     private final MaterialRepository materialRepository;
 
     private static  final Logger logger = LoggerFactory.getLogger(MaterialService.class);
-
+    @Autowired
     public MaterialService(MaterialRepository materialRepository) {
         this.materialRepository = materialRepository;
     }

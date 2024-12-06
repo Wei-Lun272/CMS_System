@@ -18,7 +18,6 @@ import java.math.BigDecimal;
 @SpringBootApplication
 public class ConstructionManagementSystemApplication implements CommandLineRunner {
 	private static final Logger logger = LoggerFactory.getLogger(ConstructionManagementSystemApplication.class);
-//	private final  MaterialService materialService;
 	private final SiteService siteService;
 
 	public ConstructionManagementSystemApplication(SiteService siteService) {
