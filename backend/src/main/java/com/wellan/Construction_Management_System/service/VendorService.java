@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Service
 public class VendorService {
     private static final Logger logger = LoggerFactory.getLogger(VendorService.class);
@@ -47,6 +49,9 @@ public class VendorService {
                 }
         );
         return vendor;
+    }
+    public List<Vendor> getAllVendor(){
+        return vendorRepository.findAll();
     }
     public void deleteVendorById(int id){
         if(vendorRepository.existsById(id)){

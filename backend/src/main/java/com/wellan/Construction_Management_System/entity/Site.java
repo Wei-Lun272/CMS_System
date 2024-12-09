@@ -1,6 +1,9 @@
 package com.wellan.Construction_Management_System.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +24,7 @@ public class Site {
     /**
      * 工地名稱，必須不可為空。
      */
+    @NotBlank
     @Column(name = "name", nullable = false)
     private String siteName;
 
@@ -39,12 +43,14 @@ public class Site {
     /**
      * 工地地址，必須不可為空。
      */
+    @NotBlank
     @Column(name = "address", nullable = false, length = 255)
     private String address;
 
     /**
      * 工地狀態，必須不可為空。
      */
+    @NotBlank
     @Column(name = "status", nullable = false, length = 16)
     private String status;
 

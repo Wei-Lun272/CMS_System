@@ -38,10 +38,10 @@ public class ConstructionManagementSystemApplication implements CommandLineRunne
 //		materialService.addMaterial(newMaterial2);
 //		System.out.println("All Materials:");
 //		materialService.getAll().forEach(System.out::println);
-		Site newSite = new Site("台中捷運","台中市市政府", SiteStatus.PLANNING,"準備拿下");
-		Site newSite2 = new  Site("台北萬華豪宅區",new BigDecimal(61.90649542),new BigDecimal(-82.00716074),"凱達格蘭大道87號",SiteStatus.CANCELLED,"太貴了放棄");
-		siteService.addSite(newSite);
-		siteService.addSite(newSite2);
-		logger.info("試運行創建兩個工地成功");
+//		Site newSite = new Site("台中捷運","台中市市政府", SiteStatus.PLANNING,"準備拿下");
+//		Site newSite2 = new  Site("台北萬華豪宅區",new BigDecimal(61.90649542),new BigDecimal(-82.00716074),"凱達格蘭大道87號",SiteStatus.CANCELLED,"太貴了放棄");
+//		siteService.addSite(newSite);
+//		siteService.addSite(newSite2);
+//		logger.info("試運行創建兩個工地成功");
 	}
 }

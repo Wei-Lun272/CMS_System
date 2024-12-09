@@ -21,10 +21,11 @@ public class MaterialService {
     public MaterialService(MaterialRepository materialRepository) {
         this.materialRepository = materialRepository;
     }
-    public void addMaterial(Material newMaterial){
-        if(!materialRepository.existsByMaterialNameAndUnit(newMaterial.getMaterialName(),newMaterial.getUnit())){
-            materialRepository.save(newMaterial);
+    public Material addMaterial(Material newMaterial){
+        if(materialRepository.existsByMaterialNameAndUnit(newMaterial.getMaterialName(),newMaterial.getUnit())){
+             throw  new ResponseStatusException(HttpStatus.CONFLICT,"相同名稱和單位的原物料已經存在，無法創建");
         }
+        return materialRepository.save(newMaterial);
     }
     //按照id獲取對應Material(Optional)
     public Material getMaterialById(int id) {

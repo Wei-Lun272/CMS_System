@@ -1,6 +1,10 @@
 package com.wellan.Construction_Management_System.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -19,12 +23,14 @@ public class Material {
     /**
      * 原物料名稱，必須不可為空。
      */
+    @NotBlank(message = "名稱不得為空。")
     @Column(name = "name", nullable = false)
     private String materialName;
 
     /**
      * 原物料的單位，使用枚舉類型 MaterialUnit。
      */
+    @NotNull(message = "請選擇所使用的計量單位。")
     @Enumerated(EnumType.STRING)
     @Column(name = "unit", nullable = false)
     private MaterialUnit unit;
@@ -32,18 +38,21 @@ public class Material {
     /**
      * 庫存數量，預設為 0，不可為負數。
      */
+    @Min(value = 0,message = "庫存數量不可為負數")
     @Column(name = "stock", nullable = false, columnDefinition = "int DEFAULT 0")
     private int stock;
 
     /**
      * 警戒數量，當庫存低於此數量時需發出警告，預設為 0，不可為負數。
      */
+    @Min(value = 0,message = "警戒數量不可為負數")
     @Column(name = "alert_number", nullable = false, columnDefinition = "int DEFAULT 0")
     private int alertNumber;
 
     /**
      * 每日消耗量，必須不可為負數。
      */
+    @Min(value = 0,message = "每日消耗數量不可為負數")
     @Column(name = "daily_consumption", nullable = false)
     private float dailyConsumption;
 
