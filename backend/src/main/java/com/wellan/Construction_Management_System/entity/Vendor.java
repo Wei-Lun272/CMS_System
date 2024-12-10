@@ -1,12 +1,13 @@
 package com.wellan.Construction_Management_System.entity;
 
+import com.wellan.Construction_Management_System.entity.baseEntity.BaseFullDateBean;
 import jakarta.persistence.*;
 
 import java.util.Objects;
 
 @Entity
 @Table(name = "vendors")
-public class Vendor {
+public class Vendor extends BaseFullDateBean {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

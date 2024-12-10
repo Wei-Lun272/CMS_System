@@ -1,5 +1,6 @@
 package com.wellan.Construction_Management_System.entity;
 
+import com.wellan.Construction_Management_System.entity.baseEntity.BaseFullDateBean;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -15,7 +16,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "sites")
-public class Site {
+public class Site extends BaseFullDateBean {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

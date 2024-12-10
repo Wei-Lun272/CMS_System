@@ -11,10 +11,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import java.math.BigDecimal;
 
-
+@EnableJpaAuditing
 @SpringBootApplication
 public class ConstructionManagementSystemApplication implements CommandLineRunner {
 	private static final Logger logger = LoggerFactory.getLogger(ConstructionManagementSystemApplication.class);

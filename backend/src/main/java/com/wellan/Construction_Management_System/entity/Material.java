@@ -1,10 +1,12 @@
 package com.wellan.Construction_Management_System.entity;
 
+import com.wellan.Construction_Management_System.entity.baseEntity.BaseFullDateBean;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -15,7 +17,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "materials")
-public class Material {
+public class Material extends BaseFullDateBean {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -49,12 +51,9 @@ public class Material {
     @Column(name = "alert_number", nullable = false, columnDefinition = "int DEFAULT 0")
     private int alertNumber;
 
-    /**
-     * 每日消耗量，必須不可為負數。
-     */
-    @Min(value = 0,message = "每日消耗數量不可為負數")
-    @Column(name = "daily_consumption", nullable = false)
-    private float dailyConsumption;
+
+
+
 
     /**
      * 與工地的關聯，表示此原物料在哪些工地中被使用。
@@ -75,38 +74,18 @@ public class Material {
      * @param unit            單位，必須不可為空
      * @param stock           庫存數量，必須大於等於 0
      * @param alertNumber     警戒數量，必須大於等於 0
-     * @param dailyConsumption 每日消耗量，必須大於等於 0
      */
-    public Material(String materialName, MaterialUnit unit, int stock, int alertNumber, float dailyConsumption) {
+    public Material(String materialName, MaterialUnit unit, int stock, int alertNumber) {
         this.materialName = Objects.requireNonNull(materialName, "原物料名稱不可為空");
         this.unit = Objects.requireNonNull(unit, "單位不可為空");
         if (stock < 0) throw new IllegalArgumentException("庫存量不得為負數");
         if (alertNumber < 0) throw new IllegalArgumentException("警戒數量不得為負數");
-        if (dailyConsumption < 0) throw new IllegalArgumentException("每日消耗量不得為負數");
 
         this.stock = stock;
         this.alertNumber = alertNumber;
-        this.dailyConsumption = dailyConsumption;
     }
 
-    /**
-     * 取得每日消耗量。
-     *
-     * @return 每日消耗量
-     */
-    public float getDailyConsumption() {
-        return dailyConsumption;
-    }
 
-    /**
-     * 設定每日消耗量。
-     *
-     * @param dailyConsumption 每日消耗量，必須大於等於 0
-     */
-    public void setDailyConsumption(float dailyConsumption) {
-        if (dailyConsumption < 0) throw new IllegalArgumentException("每日消耗量不得為負數");
-        this.dailyConsumption = dailyConsumption;
-    }
 
     /**
      * 取得原物料名稱。
@@ -182,6 +161,8 @@ public class Material {
         this.alertNumber = alertNumber;
     }
 
+
+
     /**
      * 取得與工地的關聯。
      *
@@ -208,7 +189,6 @@ public class Material {
                 ", unit=" + unit +
                 ", stock=" + stock +
                 ", alertNumber=" + alertNumber +
-                ", dailyConsumption=" + dailyConsumption +
                 '}';
     }
 

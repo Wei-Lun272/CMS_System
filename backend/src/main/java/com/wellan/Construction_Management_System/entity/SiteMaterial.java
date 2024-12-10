@@ -1,6 +1,10 @@
 package com.wellan.Construction_Management_System.entity;
 
+import com.wellan.Construction_Management_System.entity.baseEntity.BaseCreatedDateBean;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.Objects;
 
@@ -10,7 +14,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "site_material")
-public class SiteMaterial {
+public class SiteMaterial extends BaseCreatedDateBean {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,14 +37,27 @@ public class SiteMaterial {
     /**
      * 消耗量
      */
-    @Column(name = "quantity", nullable = false)
-    private float quantity;
+    @Min(value = 0,message = "消耗量不得為負數")
+    @Column(name = "consumption", nullable = false)
+    private float consumption;
 
+//    daily_consumption：當前生效的每日消耗量。
+//    pending_daily_consumption：待生效的每日消耗量。
+//    effective_date：待生效的日期。
+    /**
+     * 消耗類型，可分為單次與日常消耗
+     */
+    @Column(name = "consume_type",nullable = false)
+    private ConsumeType consumeType;
     /**
      * 消耗發生的日期
      */
     @Column(name = "date", nullable = false)
-    private LocalDate date;
+    private Timestamp date;
+    /**
+     * 紀錄創建日期，由JPA審計功能維護
+     */
+
 
     /**
      * 預設構造方法（供 JPA 使用）
@@ -53,18 +70,18 @@ public class SiteMaterial {
      *
      * @param site     工地信息，不可為 null。
      * @param material 原物料信息，不可為 null。
-     * @param quantity 消耗量，必須大於 0。
+     * @param consumption  消耗量，必須大於 0。
      * @param date     消耗日期，不可為 null。
      * @throws IllegalArgumentException 如果參數不符合要求。
      */
-    public SiteMaterial(Site site, Material material, float quantity, LocalDate date) {
+    public SiteMaterial(Site site, Material material, float consumption, Timestamp date) {
         if (site == null) {
             throw new IllegalArgumentException("工地信息不可為空");
         }
         if (material == null) {
             throw new IllegalArgumentException("原物料不可為空");
         }
-        if (quantity <= 0) {
+        if (consumption <= 0) {
             throw new IllegalArgumentException("消耗量必須大於 0");
         }
         if (date == null) {
@@ -72,7 +89,7 @@ public class SiteMaterial {
         }
         this.site = site;
         this.material = material;
-        this.quantity = quantity;
+        this.consumption = consumption;
         this.date = date;
     }
 
@@ -96,8 +113,8 @@ public class SiteMaterial {
         this.material = Objects.requireNonNull(material, "原物料不可為空");
     }
 
-    public float getQuantity() {
-        return quantity;
+    public float getConsumption() {
+        return consumption;
     }
 
     /**
@@ -106,18 +123,18 @@ public class SiteMaterial {
      * @param quantity 消耗量，必須大於 0。
      * @throws IllegalArgumentException 如果消耗量小於等於 0。
      */
-    public void setQuantity(float quantity) {
+    public void setConsumption(float quantity) {
         if (quantity <= 0) {
             throw new IllegalArgumentException("消耗量必須大於 0");
         }
-        this.quantity = quantity;
+        this.consumption = quantity;
     }
 
-    public LocalDate getDate() {
+    public Timestamp getDate() {
         return date;
     }
 
-    public void setDate(LocalDate date) {
+    public void setDate(Timestamp date) {
         this.date = Objects.requireNonNull(date, "日期不可為空");
     }
 
@@ -127,7 +144,7 @@ public class SiteMaterial {
                 "id=" + id +
                 ", site=" + site +
                 ", material=" + material +
-                ", quantity=" + quantity +
+                ", quantity=" + consumption +
                 ", date=" + date +
                 '}';
     }
