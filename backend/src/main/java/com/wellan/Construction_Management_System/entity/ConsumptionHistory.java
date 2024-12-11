@@ -26,6 +26,30 @@ public class ConsumptionHistory extends BaseCreatedDateBean {
 
     @Column(name = "consumption_date")
     private Timestamp consumptionDate;
+    protected ConsumptionHistory(){}
+    public ConsumptionHistory(Integer siteMaterialId, Float amount, ConsumeType consumeType, Timestamp consumptionDate) {
+        if (siteMaterialId == null || siteMaterialId < 0) {
+            throw new IllegalArgumentException("工地原物料 ID 必須是非負整數且不能為空。");
+        }
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("消耗量必須是正數且不能為空。");
+        }
+        if (consumeType == null) {
+            throw new IllegalArgumentException("消耗類型不能為空。");
+        }
+        if (consumptionDate == null) {
+            throw new IllegalArgumentException("消耗日期不能為空。");
+        }
+        if (consumptionDate.after(new Timestamp(System.currentTimeMillis()))) {
+            throw new IllegalArgumentException("消耗日期不能是未來日期。");
+        }
+
+        this.siteMaterialId = siteMaterialId;
+        this.amount = amount;
+        this.consumeType = consumeType;
+        this.consumptionDate = consumptionDate;
+    }
+
 
     public Integer getId() {
         return id;
