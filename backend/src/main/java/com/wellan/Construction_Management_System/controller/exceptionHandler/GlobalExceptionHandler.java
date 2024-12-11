@@ -1,4 +1,4 @@
-package com.wellan.Construction_Management_System.controller;
+package com.wellan.Construction_Management_System.controller.exceptionHandler;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
