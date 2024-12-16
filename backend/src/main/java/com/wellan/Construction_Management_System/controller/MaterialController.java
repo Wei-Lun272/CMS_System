@@ -33,19 +33,19 @@ public class MaterialController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createMaterial);
     }
     //根據id獲取對應原物料資料
-    @GetMapping("/{mId}")
-    public ResponseEntity<Material> getMaterialById(@PathVariable Integer mId){
-        return ResponseEntity.ok(materialService.getMaterialById(mId));
+    @GetMapping("/{id}")
+    public ResponseEntity<Material> getMaterialById(@PathVariable Integer id){
+        return ResponseEntity.ok(materialService.getMaterialById(id));
     }
     //根據id更新對應原物料
-    @PutMapping("/{mId}")
-    public ResponseEntity<Material> updateMaterialById(@PathVariable Integer mId,@Valid @RequestBody Material updateMaterial){
-        return ResponseEntity.ok(materialService.updateMaterialById(mId,updateMaterial));
+    @PutMapping("/{id}")
+    public ResponseEntity<Material> updateMaterialById(@PathVariable Integer id,@Valid @RequestBody Material updateMaterial){
+        return ResponseEntity.ok(materialService.updateMaterialById(id,updateMaterial));
     }
     //刪除對應id的原物料
-    @DeleteMapping("/{mId}")
-    public ResponseEntity<Void> deleteMaterialById(@PathVariable Integer mId){
-        materialService.deleteMaterialById(mId);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMaterialById(@PathVariable Integer id){
+        materialService.deleteMaterialById(id);
         return ResponseEntity.noContent().build();
     }
 
