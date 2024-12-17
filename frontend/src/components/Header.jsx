@@ -1,21 +1,35 @@
 import React from "react";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
+import { AppBar, Toolbar, Typography, IconButton } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 import { NavLink } from "react-router-dom";
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
   return (
-    <AppBar position="static">
+    <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
       <Toolbar>
+        {/* Drawer 開關按鈕 */}
+        <IconButton
+          color="inherit"
+          edge="start"
+          onClick={onMenuClick} // 點擊開關 Drawer
+          sx={{ marginRight: 2 }}
+        >
+          <MenuIcon />
+        </IconButton>
+
+        {/* 標題 */}
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          工程管理系統
+          <NavLink
+            to="/"
+            style={{
+              textDecoration: "none",
+              color: "inherit",
+              fontWeight: "bold",
+            }}
+          >
+            工程管理系統
+          </NavLink>
         </Typography>
-        <NavLink to="/login" style={({ isActive }) => ({
-            color: isActive ? "yellow" : "white", // 樣式可動態改變
-            textDecoration: "none",
-            marginLeft: "16px",
-          })}>登入</NavLink>
       </Toolbar>
     </AppBar>
   );

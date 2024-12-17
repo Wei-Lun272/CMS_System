@@ -1,5 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
-import Layout from "./components/Layout";
+import { createBrowserRouter, Navigate } from "react-router-dom";import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
 import ErrorPage from "./pages/ErrorPage"
 import MaterialsPage from "./pages/MaterialsPage";
@@ -25,7 +24,8 @@ const router = createBrowserRouter([
         ]
         }, // 原物料管理
       { path: "vendors", element: <VendorsPage /> }, // 原物料管理
-      { path: "sites", element: <SitesPage /> },         // 工地管理
+      { path: "sites", element: <SitesPage /> },  
+      { path: "*", element: <Navigate to="/" replace /> },       // 工地管理
     //   { path: "/history", element: <HistoryPage /> },     // 歷史記錄
     ],
   },
