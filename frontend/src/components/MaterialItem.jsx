@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Typography, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-const Material = ({ material,onDelete }) => {
+const MaterialItem = ({ material,onDelete }) => {
     const navigate = useNavigate()
   if (!material) {
     return (
@@ -56,4 +56,4 @@ const Material = ({ material,onDelete }) => {
   );
 };
 
-export default Material;
+export default MaterialItem;

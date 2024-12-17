@@ -4,7 +4,6 @@ import Header from "./Header";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { Box, Drawer, Toolbar, IconButton } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 
 const drawerWidth = 240;

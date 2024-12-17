@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Material from "../components/Material";
+import MaterialItem from "../components/MaterialItem";
 import { Box, Button, Typography } from "@mui/material";
 import { NavLink } from "react-router-dom";
 
@@ -77,7 +77,7 @@ const handleDelete = async (id) => {
       )}
 
       {materials.map((material) => (
-        <Material
+        <MaterialItem
           key={material.id}
           material={material}
           // onEdit={handleEdit}

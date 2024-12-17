@@ -6,6 +6,7 @@ import VendorsPage from "./pages/VendorsPage"
 import SitesPage from "./pages/SitesPage";
 import LoginPage from "./pages/LoginPage";
 import EditMaterialPage from "./components/EditMaterialPage";
+import EditVendorPage from "./components/EditVendorPage";
 // import HistoryPage from "./pages/HistoryPage";
 
 const router = createBrowserRouter([
@@ -23,8 +24,18 @@ const router = createBrowserRouter([
             {path:"new",element:<EditMaterialPage/>}
         ]
         }, // 原物料管理
-      { path: "vendors", element: <VendorsPage /> }, // 原物料管理
-      { path: "sites", element: <SitesPage /> },  
+      { path: "vendors", 
+        children:[ 
+            {index:true,element: <VendorsPage />},
+            {path:":id/edit",element:<EditVendorPage/>},
+            {path:"new",element:<EditVendorPage/>}
+        ] }, // 原物料管理
+      { path: "sites", 
+        children:[ 
+            {index:true,element: <SitesPage />},
+            {path:":id/edit",element:<EditMaterialPage/>},
+            {path:"new",element:<EditMaterialPage/>}
+        ] },  
       { path: "*", element: <Navigate to="/" replace /> },       // 工地管理
     //   { path: "/history", element: <HistoryPage /> },     // 歷史記錄
     ],

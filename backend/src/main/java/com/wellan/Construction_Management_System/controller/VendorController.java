@@ -35,26 +35,26 @@ public class VendorController {
         List<Vendor> vendorList = vendorService.getAllVendor();
         return ResponseEntity.ok(vendorList);
     }
-    @GetMapping("/{vId}")
-    public ResponseEntity<Vendor> getVendorById(@PathVariable int vId){
-        Vendor vendorById = vendorService.getVendorById(vId);
+    @GetMapping("/{id}")
+    public ResponseEntity<Vendor> getVendorById(@PathVariable int id){
+        Vendor vendorById = vendorService.getVendorById(id);
         return ResponseEntity.ok(vendorById);
     }
     //UPDATE
-    @PutMapping("/{vId}")
-    public ResponseEntity<Vendor> updateVendor(@PathVariable int vId,
+    @PutMapping("/{id}")
+    public ResponseEntity<Vendor> updateVendor(@PathVariable int id,
                                                @Valid @RequestBody Vendor updatedVendor){
-        logger.info("正在更新id:{}的廠商資料",vId);
-        Vendor updated = vendorService.updateVendorById(vId, updatedVendor);
+        logger.info("正在更新id:{}的廠商資料",id);
+        Vendor updated = vendorService.updateVendorById(id, updatedVendor);
         logger.info("已更新資料。");
         return ResponseEntity.ok(updated);
     }
     //DELETE
-    @DeleteMapping("/{vId}")
-    public ResponseEntity<Void> deleteVendor(@PathVariable int vId){
-        logger.info("預計刪除id為:{}的廠商資料",vId);
-        vendorService.deleteVendorById(vId);
-        logger.info("已刪除id為:{}的廠商資料",vId);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteVendor(@PathVariable int id){
+        logger.info("預計刪除id為:{}的廠商資料",id);
+        vendorService.deleteVendorById(id);
+        logger.info("已刪除id為:{}的廠商資料",id);
         return ResponseEntity.noContent().build();
     }
 }
