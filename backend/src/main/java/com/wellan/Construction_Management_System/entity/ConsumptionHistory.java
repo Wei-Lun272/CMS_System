@@ -29,22 +29,37 @@ public class ConsumptionHistory extends BaseCreatedDateBean {
 
     protected ConsumptionHistory(){}
 
-    public ConsumptionHistory(Float amount, ConsumeType consumeType, Timestamp consumptionDate) {
+    public ConsumptionHistory(SiteMaterial siteMaterial, Float amount, ConsumeType consumeType, Timestamp consumptionDate) {
 
-        if (amount == null || amount <= 0) {
-            throw new IllegalArgumentException("消耗量必須是正數且不能為空。");
-        }
+        // 驗證: consumeType 不能為 null
         if (consumeType == null) {
-            throw new IllegalArgumentException("消耗類型不能為空。");
+            throw new IllegalArgumentException("庫存變動類型不能為空。");
         }
+
+        // 驗證: 消耗日期不能為 null
         if (consumptionDate == null) {
             throw new IllegalArgumentException("消耗日期不能為空。");
         }
-        if (consumptionDate.after(new Timestamp(System.currentTimeMillis()))) {
-            throw new IllegalArgumentException("消耗日期不能是未來日期。");
+
+        // 驗證: amount 不能為空
+        if (amount == null) {
+            throw new IllegalArgumentException("數量不能為空。");
         }
 
-        this.amount = amount;
+        // 驗證: amount 根據 consumeType 的要求
+        if (consumeType == ConsumeType.DISPATCH) {
+            if (amount <= 0) {
+                throw new IllegalArgumentException("派發量必須是正數。");
+            }
+            this.amount = amount; // 正數
+        } else {
+            if (amount <= 0) {
+                throw new IllegalArgumentException("消耗量必須是正數。");
+            }
+            this.amount = -amount; // 消耗量記為負數
+        }
+
+        this.siteMaterial = Objects.requireNonNull(siteMaterial, "SiteMaterial 不能為空。");
         this.consumeType = consumeType;
         this.consumptionDate = consumptionDate;
     }

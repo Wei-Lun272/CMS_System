@@ -57,9 +57,7 @@ public class MaterialService {
 
         // 更新資料
         originMaterial.setMaterialName(updatedMaterial.getMaterialName());
-        originMaterial.setStock(updatedMaterial.getStock());
         originMaterial.setUnit(updatedMaterial.getUnit());
-        originMaterial.setAlertNumber(updatedMaterial.getAlertNumber());
 
         // 保存更新後的資料
         Material savedMaterial = materialRepository.save(originMaterial);

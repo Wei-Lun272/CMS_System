@@ -37,22 +37,6 @@ public class Material extends BaseFullDateBean {
     @Column(name = "unit", nullable = false)
     private MaterialUnit unit;
 
-    /**
-     * 庫存數量，預設為 0，不可為負數。
-     */
-    @Min(value = 0,message = "庫存數量不可為負數")
-    @Column(name = "stock", nullable = false, columnDefinition = "int DEFAULT 0")
-    private int stock;
-
-    /**
-     * 警戒數量，當庫存低於此數量時需發出警告，預設為 0，不可為負數。
-     */
-    @Min(value = 0,message = "警戒數量不可為負數")
-    @Column(name = "alert_number", nullable = false, columnDefinition = "int DEFAULT 0")
-    private int alertNumber;
-
-
-
 
 
     /**
@@ -78,11 +62,7 @@ public class Material extends BaseFullDateBean {
     public Material(String materialName, MaterialUnit unit, int stock, int alertNumber) {
         this.materialName = Objects.requireNonNull(materialName, "原物料名稱不可為空");
         this.unit = Objects.requireNonNull(unit, "單位不可為空");
-        if (stock < 0) throw new IllegalArgumentException("庫存量不得為負數");
-        if (alertNumber < 0) throw new IllegalArgumentException("警戒數量不得為負數");
 
-        this.stock = stock;
-        this.alertNumber = alertNumber;
     }
 
 
@@ -126,43 +106,6 @@ public class Material extends BaseFullDateBean {
         this.unit = Objects.requireNonNull(unit, "單位不可為空");
     }
 
-    /**
-     * 取得庫存數量。
-     *
-     * @return 庫存數量
-     */
-    public int getStock() {
-        return stock;
-    }
-
-    /**
-     * 設定庫存數量。
-     *
-     * @param stock 庫存數量，必須大於等於 0
-     */
-    public void setStock(int stock) {
-        if (stock < 0) throw new IllegalArgumentException("庫存量不得為負數");
-        this.stock = stock;
-    }
-
-    /**
-     * 取得警戒數量。
-     *
-     * @return 警戒數量
-     */
-    public int getAlertNumber() {
-        return alertNumber;
-    }
-
-    /**
-     * 設定警戒數量。
-     *
-     * @param alertNumber 警戒數量，必須大於等於 0
-     */
-    public void setAlertNumber(int alertNumber) {
-        if (alertNumber < 0) throw new IllegalArgumentException("警戒數量不得為負數");
-        this.alertNumber = alertNumber;
-    }
 
 
 
@@ -190,8 +133,6 @@ public class Material extends BaseFullDateBean {
                 "id=" + id +
                 ", materialName='" + materialName + '\'' +
                 ", unit=" + unit +
-                ", stock=" + stock +
-                ", alertNumber=" + alertNumber +
                 '}';
     }
 

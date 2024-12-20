@@ -1,20 +1,20 @@
 package com.wellan.Construction_Management_System.entity;
 
 import com.wellan.Construction_Management_System.entity.baseEntity.BaseCreatedDateBean;
+import com.wellan.Construction_Management_System.entity.baseEntity.BaseFullDateBean;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.util.Objects;
 
 /**
- * SiteMaterial 類別用於記錄工地與原物料之間的消耗關係。
- * 包含工地、原物料、消耗量及日期等信息。
+ * SiteMaterial 類別用於記錄工地與原物料之間的庫存與警戒。
+ * 包含工地、原物料、庫存、警戒值及修改日期等信息。
  */
 @Entity
 @Table(name = "site_material")
-public class SiteMaterial extends BaseCreatedDateBean {
+public class SiteMaterial extends BaseFullDateBean {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,23 +37,18 @@ public class SiteMaterial extends BaseCreatedDateBean {
     /**
      * 消耗量
      */
-    @Min(value = 0,message = "消耗量不得為負數")
-    @Column(name = "consumption", nullable = false)
-    private float consumption;
+    @Min(value = 0,message = "庫存不得為負數")
+    @Column(name = "stock", nullable = false)
+    private float stock;
 
-//    daily_consumption：當前生效的每日消耗量。
-//    pending_daily_consumption：待生效的每日消耗量。
-//    effective_date：待生效的日期。
+
+
     /**
-     * 消耗類型，可分為單次與日常消耗
+     * 對應的警戒值
      */
-    @Column(name = "consume_type",nullable = false)
-    private ConsumeType consumeType;
-    /**
-     * 消耗發生的日期
-     */
-    @Column(name = "date", nullable = false)
-    private Timestamp date;
+    @Min(value = 0,message = "警戒值不得為負數")
+    @Column(name = "alert",nullable = false)
+    private float alert;
     /**
      * 紀錄創建日期，由JPA審計功能維護
      */
@@ -70,27 +65,40 @@ public class SiteMaterial extends BaseCreatedDateBean {
      *
      * @param site     工地信息，不可為 null。
      * @param material 原物料信息，不可為 null。
-     * @param consumption  消耗量，必須大於 0。
-     * @param date     消耗日期，不可為 null。
+     * @param stock  庫存，必須大於 0。
+     * @param alert     警戒值，必須大於 0。
      * @throws IllegalArgumentException 如果參數不符合要求。
      */
-    public SiteMaterial(Site site, Material material, float consumption, Timestamp date) {
+    public SiteMaterial(Site site, Material material, Float stock, Float alert) {
+        // 驗證 site 不能為 null
         if (site == null) {
-            throw new IllegalArgumentException("工地信息不可為空");
+            throw new IllegalArgumentException("工地 (site) 不能為空。");
         }
+
+        // 驗證 material 不能為 null
         if (material == null) {
-            throw new IllegalArgumentException("原物料不可為空");
+            throw new IllegalArgumentException("原物料 (material) 不能為空。");
         }
-        if (consumption <= 0) {
-            throw new IllegalArgumentException("消耗量必須大於 0");
+
+        // 驗證 stock (庫存) 不能為 null 且不能為負數
+        if (stock == null || stock < 0) {
+            throw new IllegalArgumentException("庫存 (stock) 必須是非負數且不能為空。");
         }
-        if (date == null) {
-            throw new IllegalArgumentException("日期不可為空");
+
+        // 驗證 alert (警戒量) 不能為 null 且不能為負數
+        if (alert == null || alert < 0) {
+            throw new IllegalArgumentException("警戒量 (alert) 必須是非負數且不能為空。");
         }
+
+        // 警戒量不能大於庫存量
+        if (alert > stock) {
+            throw new IllegalArgumentException("警戒量 (alert) 不能大於庫存量 (stock)。");
+        }
+
         this.site = site;
         this.material = material;
-        this.consumption = consumption;
-        this.date = date;
+        this.stock = stock;
+        this.alert = alert;
     }
 
     public Integer getId() {
@@ -102,7 +110,7 @@ public class SiteMaterial extends BaseCreatedDateBean {
     }
 
     public void setSite(Site site) {
-        this.site = Objects.requireNonNull(site, "工地信息不可為空");
+        this.site = site;
     }
 
     public Material getMaterial() {
@@ -110,32 +118,25 @@ public class SiteMaterial extends BaseCreatedDateBean {
     }
 
     public void setMaterial(Material material) {
-        this.material = Objects.requireNonNull(material, "原物料不可為空");
+        this.material = material;
     }
 
-    public float getConsumption() {
-        return consumption;
+    @Min(value = 0, message = "庫存不得為負數")
+    public float getStock() {
+        return stock;
     }
 
-    /**
-     * 設置消耗量。
-     *
-     * @param quantity 消耗量，必須大於 0。
-     * @throws IllegalArgumentException 如果消耗量小於等於 0。
-     */
-    public void setConsumption(float quantity) {
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("消耗量必須大於 0");
-        }
-        this.consumption = quantity;
+    public void setStock(@Min(value = 0, message = "庫存不得為負數") float stock) {
+        this.stock = stock;
     }
 
-    public Timestamp getDate() {
-        return date;
+    @Min(value = 0, message = "警戒值不得為負數")
+    public float getAlert() {
+        return alert;
     }
 
-    public void setDate(Timestamp date) {
-        this.date = Objects.requireNonNull(date, "日期不可為空");
+    public void setAlert(@Min(value = 0, message = "警戒值不得為負數") float alert) {
+        this.alert = alert;
     }
 
     @Override
@@ -144,8 +145,8 @@ public class SiteMaterial extends BaseCreatedDateBean {
                 "id=" + id +
                 ", site=" + site +
                 ", material=" + material +
-                ", quantity=" + consumption +
-                ", date=" + date +
+                ", stock=" + stock +
+                ", alert=" + alert +
                 '}';
     }
 

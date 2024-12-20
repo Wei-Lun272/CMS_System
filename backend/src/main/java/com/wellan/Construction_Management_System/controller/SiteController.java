@@ -33,21 +33,21 @@ public class SiteController {
         List<Site> allSite = siteService.getAllSite();
         return ResponseEntity.ok(allSite);
     }
-    @GetMapping("/{sId}")
-    public ResponseEntity<Site> findSiteById(@PathVariable int sId){
-        Site site = siteService.getSiteById(sId);
+    @GetMapping("/{id}")
+    public ResponseEntity<Site> findSiteById(@PathVariable int id){
+        Site site = siteService.getSiteById(id);
         return ResponseEntity.ok(site);
     }
     //UPDATE
-    @PutMapping("/{sId}")
-    public ResponseEntity<Site> updateSiteById(@PathVariable int sId,
+    @PutMapping("/{id}")
+    public ResponseEntity<Site> updateSiteById(@PathVariable int id,
                                                @Valid @RequestBody Site updateSite){
-        Site site = siteService.updateSiteById(sId, updateSite);
+        Site site = siteService.updateSiteById(id, updateSite);
         return ResponseEntity.ok(site);
     }
-    @DeleteMapping("/{sId}")
-    public ResponseEntity<Void> deleteSiteById(@PathVariable int sId){
-        siteService.deleteSite(sId);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSiteById(@PathVariable int id){
+        siteService.deleteSite(id);
         return ResponseEntity.noContent().build();
     }
 

@@ -97,6 +97,10 @@ public class Site extends BaseFullDateBean {
         this.description = description;
     }
 
+    public int getId() {
+        return id;
+    }
+
     /**
      * 簡化建構方法，用於創建僅有名稱和地址的 Site 實例。
      *
