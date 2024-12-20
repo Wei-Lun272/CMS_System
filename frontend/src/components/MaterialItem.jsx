@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Typography, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import {getMaterialUnitLabel} from "../utils/materialUnitHelper";
 
 const MaterialItem = ({ material,onDelete }) => {
     const navigate = useNavigate()
@@ -27,14 +28,9 @@ const MaterialItem = ({ material,onDelete }) => {
         原物料名稱: {material.materialName}
       </Typography>
       <Typography variant="body1">
-        <strong>計量單位:</strong> {material.unit}
+        <strong>計量單位:</strong> {getMaterialUnitLabel(material.unit)}
       </Typography>
-      <Typography variant="body1">
-        <strong>庫存數量:</strong> {material.stock}
-      </Typography>
-      <Typography variant="body1">
-        <strong>警戒數量:</strong> {material.alertNumber}
-      </Typography>
+      
 
       <Box sx={{ marginTop: "16px", display: "flex", gap: "8px" }}>
         <Button

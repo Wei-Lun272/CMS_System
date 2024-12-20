@@ -1,23 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, TextField, Button, Typography, MenuItem } from "@mui/material";
+import { MATERIAL_UNITS } from "../utils/materialUnitHelper";
 
-// MaterialUnit 的枚舉類型（value 為常數名，label 為友好名稱）
-const MATERIAL_UNITS = [
-  { value: "KILOGRAM", label: "公斤" },
-  { value: "TON", label: "噸" },
-  { value: "GRAM", label: "克" },
-  { value: "LITER", label: "公升" },
-  { value: "MILLILITER", label: "毫升" },
-  { value: "CUBIC_METER", label: "立方公尺" },
-  { value: "PIECE", label: "件" },
-  { value: "BOX", label: "箱" },
-  { value: "PACK", label: "包" },
-  { value: "PALLET", label: "棧板" },
-  { value: "ROLL", label: "卷" },
-  { value: "BAG", label: "袋" },
-  { value: "SHEET", label: "片" },
-];
 
 export default function EditMaterialPage() {
   const { id } = useParams(); // 獲取路由參數
