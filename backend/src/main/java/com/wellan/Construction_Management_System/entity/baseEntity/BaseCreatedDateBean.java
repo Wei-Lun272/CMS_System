@@ -13,4 +13,8 @@ public class BaseCreatedDateBean {
     @CreatedDate
     @Column(name = "created_date",updatable = false)
     private Timestamp createdDate;
+
+    public Timestamp getCreatedDate() {
+        return createdDate;
+    }
 }

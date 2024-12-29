@@ -19,18 +19,7 @@ public enum SiteStatus {
         return friendlyName;
     }
 
-    // 從友好名稱反查枚舉類
-    public static SiteStatus fromFriendlyName(String friendlyName) {
-        if (friendlyName == null || friendlyName.isEmpty()) {
-            throw new IllegalArgumentException("友好名稱不能為空");
-        }
-        for (SiteStatus status : SiteStatus.values()) {
-            if (status.friendlyName.equals(friendlyName)) {
-                return status;
-            }
-        }
-        throw new IllegalArgumentException("未知的友好名稱: " + friendlyName);
-    }
+
 
 }
 

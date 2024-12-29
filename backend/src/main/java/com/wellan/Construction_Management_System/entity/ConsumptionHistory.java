@@ -24,12 +24,15 @@ public class ConsumptionHistory extends BaseCreatedDateBean {
     @Column(name = "consumption_type")
     private ConsumeType consumeType;
 
-    @Column(name = "consumption_date")
-    private Timestamp consumptionDate;
+    @Column(name = "effective_date")
+    private Timestamp effectiveDate;
+
+    @Column(name = "expired")
+    private Boolean expired;
 
     protected ConsumptionHistory(){}
 
-    public ConsumptionHistory(SiteMaterial siteMaterial, Float amount, ConsumeType consumeType, Timestamp consumptionDate) {
+    public ConsumptionHistory(SiteMaterial siteMaterial, Float amount, ConsumeType consumeType, Timestamp effectiveDate) {
 
         // 驗證: consumeType 不能為 null
         if (consumeType == null) {
@@ -37,7 +40,7 @@ public class ConsumptionHistory extends BaseCreatedDateBean {
         }
 
         // 驗證: 消耗日期不能為 null
-        if (consumptionDate == null) {
+        if (effectiveDate == null) {
             throw new IllegalArgumentException("消耗日期不能為空。");
         }
 
@@ -61,7 +64,8 @@ public class ConsumptionHistory extends BaseCreatedDateBean {
 
         this.siteMaterial = Objects.requireNonNull(siteMaterial, "SiteMaterial 不能為空。");
         this.consumeType = consumeType;
-        this.consumptionDate = consumptionDate;
+        this.effectiveDate = effectiveDate;
+        this.expired=false;
     }
 
 
@@ -93,33 +97,43 @@ public class ConsumptionHistory extends BaseCreatedDateBean {
         this.consumeType = consumeType;
     }
 
-    public Timestamp getConsumptionDate() {
-        return consumptionDate;
+    public Timestamp getEffectiveDate() {
+        return effectiveDate;
     }
 
-    public void setConsumptionDate(Timestamp consumptionDate) {
-        this.consumptionDate = consumptionDate;
+    public void setEffectiveDate(Timestamp effectiveDate) {
+        this.effectiveDate = effectiveDate;
+    }
+
+    public Boolean getExpired() {
+        return expired;
+    }
+
+    public void setExpired(Boolean expired) {
+        this.expired = expired;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ConsumptionHistory that)) return false;
-        return Objects.equals(id, that.id) && Objects.equals(siteMaterial, that.siteMaterial) && Objects.equals(amount, that.amount) && consumeType == that.consumeType && Objects.equals(consumptionDate, that.consumptionDate);
+        return Objects.equals(id, that.id) && Objects.equals(siteMaterial, that.siteMaterial) && Objects.equals(amount, that.amount) && consumeType == that.consumeType && Objects.equals(effectiveDate, that.effectiveDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, amount, consumeType, consumptionDate);
+        return Objects.hash(id, amount, consumeType, effectiveDate);
     }
 
     @Override
     public String toString() {
         return "ConsumptionHistory{" +
                 "id=" + id +
+                ", siteMaterial=" + siteMaterial +
                 ", amount=" + amount +
                 ", consumeType=" + consumeType +
-                ", consumptionDate=" + consumptionDate +
+                ", effectiveDate=" + effectiveDate +
+                ", expired=" + expired +
                 '}';
     }
 }

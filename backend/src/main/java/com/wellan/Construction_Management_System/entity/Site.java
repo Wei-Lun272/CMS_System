@@ -3,6 +3,7 @@ package com.wellan.Construction_Management_System.entity;
 import com.wellan.Construction_Management_System.entity.baseEntity.BaseFullDateBean;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -50,9 +51,10 @@ public class Site extends BaseFullDateBean {
     /**
      * 工地狀態，必須不可為空。
      */
-    @NotBlank
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 16)
-    private String status;
+    private SiteStatus status;
 
     /**
      * 工地描述，可選。
@@ -85,7 +87,7 @@ public class Site extends BaseFullDateBean {
     public Site(String siteName, BigDecimal latitude, BigDecimal longitude, String address, SiteStatus status, String description) {
         this.siteName = Objects.requireNonNull(siteName, "工地名稱不可為空");
         this.address = Objects.requireNonNull(address, "工地地址不可為空");
-        this.status = Objects.requireNonNull(status, "工地狀態不可為空").getFriendlyName();
+        this.status = Objects.requireNonNull(status, "工地狀態不可為空");
         if (latitude != null && (latitude.compareTo(new BigDecimal("-90.0")) < 0 || latitude.compareTo(new BigDecimal("90.0")) > 0)) {
             throw new IllegalArgumentException("緯度必須在 -90 到 90 之間");
         }
@@ -197,7 +199,7 @@ public class Site extends BaseFullDateBean {
      * @return 工地狀態
      */
     public SiteStatus getStatus() {
-        return SiteStatus.fromFriendlyName(this.status);
+        return this.status;
     }
 
     /**
@@ -206,7 +208,7 @@ public class Site extends BaseFullDateBean {
      * @param status 工地狀態，必須不可為空
      */
     public void setStatus(SiteStatus status) {
-        this.status = Objects.requireNonNull(status, "工地狀態不可為空").getFriendlyName();
+        this.status = Objects.requireNonNull(status, "工地狀態不可為空");
     }
 
     /**

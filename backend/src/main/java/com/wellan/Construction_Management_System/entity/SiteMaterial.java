@@ -1,11 +1,11 @@
 package com.wellan.Construction_Management_System.entity;
 
-import com.wellan.Construction_Management_System.entity.baseEntity.BaseCreatedDateBean;
 import com.wellan.Construction_Management_System.entity.baseEntity.BaseFullDateBean;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 
-import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -49,9 +49,10 @@ public class SiteMaterial extends BaseFullDateBean {
     @Min(value = 0,message = "警戒值不得為負數")
     @Column(name = "alert",nullable = false)
     private float alert;
-    /**
-     * 紀錄創建日期，由JPA審計功能維護
-     */
+
+    @OneToMany(mappedBy = "siteMaterial", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ConsumptionHistory> consumptionHistories = new ArrayList<>();
+
 
 
     /**
@@ -90,10 +91,10 @@ public class SiteMaterial extends BaseFullDateBean {
             throw new IllegalArgumentException("警戒量 (alert) 必須是非負數且不能為空。");
         }
 
-        // 警戒量不能大於庫存量
-        if (alert > stock) {
-            throw new IllegalArgumentException("警戒量 (alert) 不能大於庫存量 (stock)。");
-        }
+//        // 警戒量不能大於庫存量
+//        if (alert > stock) {
+//            throw new IllegalArgumentException("警戒量 (alert) 不能大於庫存量 (stock)。");
+//        }
 
         this.site = site;
         this.material = material;
@@ -101,6 +102,11 @@ public class SiteMaterial extends BaseFullDateBean {
         this.alert = alert;
     }
 
+
+
+    public static SiteMaterial createClearSiteMaterial(Site site, Material material, Float stock, Float alert){
+        return new SiteMaterial(site,material,stock,alert);
+    }
     public Integer getId() {
         return id;
     }
@@ -137,6 +143,14 @@ public class SiteMaterial extends BaseFullDateBean {
 
     public void setAlert(@Min(value = 0, message = "警戒值不得為負數") float alert) {
         this.alert = alert;
+    }
+
+    public List<ConsumptionHistory> getConsumptionHistories() {
+        return consumptionHistories;
+    }
+
+    public void setConsumptionHistories(List<ConsumptionHistory> consumptionHistories) {
+        this.consumptionHistories = consumptionHistories;
     }
 
     @Override
