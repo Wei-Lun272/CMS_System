@@ -1,5 +1,6 @@
 package com.wellan.Construction_Management_System.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wellan.Construction_Management_System.entity.baseEntity.BaseFullDateBean;
 import jakarta.persistence.*;
@@ -43,6 +44,7 @@ public class Material extends BaseFullDateBean {
      * 與工地的關聯，表示此原物料在哪些工地中被使用。
      */
     @OneToMany(mappedBy = "material", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<SiteMaterial> siteMaterials = new ArrayList<>();
 
     /**

@@ -8,7 +8,9 @@ import LoginPage from "./pages/LoginPage";
 import EditMaterialPage from "./components/EditMaterialPage";
 import EditVendorPage from "./components/EditVendorPage";
 import EditSitePage from "./components/EditSitePage";
-// import HistoryPage from "./pages/HistoryPage";
+import DispatchPage from "./pages/DispatchPage";
+import SiteDetailPage from "./pages/SiteDetailPage";
+import ConsumePage from "./pages/ConsumePage";
 
 const router = createBrowserRouter([
   {
@@ -34,7 +36,13 @@ const router = createBrowserRouter([
       { path: "sites", 
         children:[ 
             {index:true,element: <SitesPage />},
-            {path:":id/edit",element:<EditSitePage/>},
+            {path:":id",
+              children:[
+                {path:"detail",element:<SiteDetailPage/>},
+                {path:"edit",element:<EditSitePage/>},
+                {path:"dispatch",element:<DispatchPage/>},
+                {path:"consume",element:<ConsumePage/>}
+              ]},
             {path:"new",element:<EditSitePage/>}
         ] },  
       { path: "*", element: <Navigate to="/" replace /> },       // 工地管理

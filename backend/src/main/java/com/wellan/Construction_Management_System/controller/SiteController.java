@@ -3,6 +3,7 @@ package com.wellan.Construction_Management_System.controller;
 import com.wellan.Construction_Management_System.dto.SingleConsumeDTO;
 import com.wellan.Construction_Management_System.dto.SingleDispatchDTO;
 import com.wellan.Construction_Management_System.dto.SiteDetailDTO;
+import com.wellan.Construction_Management_System.dto.SiteMaterialDetailDTO;
 import com.wellan.Construction_Management_System.entity.Site;
 import com.wellan.Construction_Management_System.entity.SiteMaterial;
 import com.wellan.Construction_Management_System.service.SiteService;
@@ -107,6 +108,8 @@ public class SiteController {
             @PathVariable int id,
             @RequestBody List<SingleConsumeDTO> consumeList) {
         logger.info("收到工地 ID 為 {} 的批量消耗請求，消耗列表: {}", id, consumeList);
+        logger.debug("接收到的批量消耗請求數據: {}", consumeList);
+
         try {
             Integer siteId = stockOperationService.batchConsumeMaterials(id, consumeList);
             logger.info("成功紀錄工地 ID {}的消耗，返回工地ID: {}", id, siteId);
@@ -115,6 +118,13 @@ public class SiteController {
             logger.error("批量消耗工地 ID {}原物料的請求失敗: {}", id, e.getMessage());
             throw e;
         }
+    }
+    @GetMapping("/{id}/materials")
+    public ResponseEntity<List<SiteMaterialDetailDTO>> getMaterialById(@PathVariable Integer id){
+        List<SiteMaterial> materialsFromSite = stockOperationService.getMaterialsFromSite(id);
+        List<SiteMaterialDetailDTO> list = materialsFromSite.stream().map(SiteMaterialDetailDTO::createFromSiteMaterial).toList();
+        return ResponseEntity.ok(list);
+
     }
 
 }

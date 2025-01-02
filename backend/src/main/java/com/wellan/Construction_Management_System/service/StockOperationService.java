@@ -108,6 +108,9 @@ public class StockOperationService {
 
         // 2. 處理每筆消耗請求
         for (SingleConsumeDTO consumeDTO : consumeList) {
+            logger.debug("處理消耗 DTO: materialId={}, consumeAmount={}, consumeType={}, effectiveDate={}",
+                    consumeDTO.getMaterialId(), consumeDTO.getConsumeAmount(), consumeDTO.getConsumeType(), consumeDTO.getEffectiveDate());
+
             try {
                 // 2.1 查找對應的原物料
                 Material material = materialRepository.findById(consumeDTO.getMaterialId())
@@ -116,11 +119,12 @@ public class StockOperationService {
                 // 2.2 查找或驗證 SiteMaterial 是否存在
                 SiteMaterial siteMaterial = siteMaterialRepository.findBySiteAndMaterial(site, material)
                         .orElseThrow(() -> new IllegalArgumentException("工地無對應的原物料，無法消耗"));
-
+                logger.debug("查找到原物料: {}", material);
+                logger.debug("查找到工地與原物料關係: {}", siteMaterial);
                 // 3. 根據消耗類型處理紀錄
                 ConsumptionHistory history = new ConsumptionHistory(
                         siteMaterial,
-                        -consumeDTO.getConsumeAmount(),
+                        consumeDTO.getConsumeAmount(),
                         consumeDTO.getConsumeType(),
                         consumeDTO.getEffectiveDate()
                 );
@@ -128,7 +132,7 @@ public class StockOperationService {
 
                 logger.info("準備創建消耗紀錄，原物料 ID {}, 數量 {}, 類型 {}, 起效日期 {}",
                         material.getId(), consumeDTO.getConsumeAmount(), consumeDTO.getConsumeType(), consumeDTO.getEffectiveDate());
-
+                logger.debug("創建消耗紀錄: {}", history);
                 // 4. 根據紀錄執行對應消耗邏輯
                 if (consumeDTO.getConsumeType() == ConsumeType.ONCE) {
                     handleOnceConsumption(siteMaterial, consumeDTO.getConsumeAmount(), consumeDTO.getEffectiveDate());
@@ -145,6 +149,7 @@ public class StockOperationService {
 
         // 5. 統一保存所有新增的消耗紀錄
         if (!newHistories.isEmpty()) {
+            logger.debug("準備批量保存消耗紀錄，共 {} 條: {}", newHistories.size(), newHistories);
             consumptionHistoryRepository.saveAll(newHistories);
         }
 
@@ -182,6 +187,52 @@ public class StockOperationService {
     }
 
     @Transactional
+    public void handleOnceConsumption(SiteMaterial siteMaterial, float consumeAmount, Timestamp effectiveDate) {
+        // 獲取當前日期
+        Timestamp today = new Timestamp(System.currentTimeMillis());
+        logger.debug("執行一次性消耗，SiteMaterial ID={}, consumeAmount={}, effectiveDate={}",
+                siteMaterial.getId(), consumeAmount, effectiveDate);
+
+        // 驗證是否是起效日期
+        if (!effectiveDate.equals(today)) {
+            logger.info("一次性消耗尚未生效，SiteMaterial ID {}, 起效日期 {}", siteMaterial.getId(), effectiveDate);
+            return; // 尚未生效，直接退出
+        }
+
+        // 執行一次性消耗邏輯
+        executeOnceConsumption(siteMaterial, consumeAmount);
+
+        // 更新消耗紀錄為過期
+        List<ConsumptionHistory> histories = consumptionHistoryRepository.findBySiteMaterialAndConsumeType(siteMaterial, ConsumeType.ONCE);
+        for (ConsumptionHistory history : histories) {
+            if (!history.getExpired() && history.getEffectiveDate().equals(effectiveDate)) {
+                history.setExpired(true);
+                consumptionHistoryRepository.save(history); // 保存更改
+                logger.info("將一次性消耗紀錄設為過期，ID {}, 起效日期 {}", history.getId(), history.getEffectiveDate());
+            }
+        }
+
+        logger.info("完成一次性消耗，SiteMaterial ID {}, 消耗數量 {}, 起效日期 {}", siteMaterial.getId(), consumeAmount, effectiveDate);
+    }
+
+    @Transactional
+    public void handleDailyConsumption(SiteMaterial siteMaterial, float consumeAmount, Timestamp effectiveDate) {
+        // 1. 查詢該 SiteMaterial 的所有 DAILY 消耗紀錄
+        List<ConsumptionHistory> histories = consumptionHistoryRepository.findBySiteMaterialAndConsumeType(siteMaterial, ConsumeType.DAILY);
+
+        // 2. 將早於 effectiveDate 且尚未過期的紀錄設為過期
+        for (ConsumptionHistory history : histories) {
+            if (!history.getExpired() && history.getEffectiveDate().before(effectiveDate)) {
+                history.setExpired(true);
+                consumptionHistoryRepository.save(history);
+            }
+        }
+
+        // 3. 執行每日消耗邏輯
+        executeDailyConsumption(siteMaterial, consumeAmount);
+    }
+
+    @Transactional
     public void executeConsumption(SiteMaterial siteMaterial, float consumptionAmount, ConsumeType consumeType, String description) {
         // 驗證輸入參數
         if (siteMaterial == null) {
@@ -192,7 +243,7 @@ public class StockOperationService {
         }
 
         // 計算新的庫存
-        float newStock = siteMaterial.getStock() + consumptionAmount;
+        float newStock = siteMaterial.getStock() - consumptionAmount; // 扣除消耗量
 
         // 驗證庫存是否足夠
         if (newStock < 0) {
@@ -207,13 +258,14 @@ public class StockOperationService {
         InventorySnapshot snapshot = new InventorySnapshot(
                 siteMaterial,
                 newStock,
-                consumptionAmount,
+                -consumptionAmount, // 此處記錄消耗量為負數以標記扣減
                 consumeType,
                 new Timestamp(System.currentTimeMillis()),
                 description
         );
         inventorySnapshotRepository.save(snapshot);
     }
+
     @Transactional
     public void executeDailyConsumption(SiteMaterial siteMaterial, float consumptionAmount) {
         executeConsumption(
@@ -233,66 +285,6 @@ public class StockOperationService {
                 "單次消耗"
         );
     }
-
-    /**
-     * 處理一次性（ONCE）消耗邏輯。
-     *
-     * @param siteMaterial 對應的 SiteMaterial
-     * @param consumeAmount 消耗的數量
-     * @param effectiveDate 消耗的起效日期
-     */
-    @Transactional
-    public void handleOnceConsumption(SiteMaterial siteMaterial, float consumeAmount, Timestamp effectiveDate) {
-        // 獲取當前日期
-        Timestamp today = new Timestamp(System.currentTimeMillis());
-
-        // 驗證是否是起效日期
-        if (!effectiveDate.equals(today)) {
-            logger.info("一次性消耗尚未生效，SiteMaterial ID {}, 起效日期 {}", siteMaterial.getId(), effectiveDate);
-            return; // 尚未生效，直接退出
-        }
-
-        // 執行一次性消耗邏輯
-        executeOnceConsumption(siteMaterial, consumeAmount);
-
-        // 更新消耗紀錄為過期
-        List<ConsumptionHistory> histories = consumptionHistoryRepository.findBySiteMaterialAndConsumeType(siteMaterial, ConsumeType.ONCE);
-
-        for (ConsumptionHistory history : histories) {
-            if (!history.getExpired() && history.getEffectiveDate().equals(effectiveDate)) {
-                history.setExpired(true);
-                consumptionHistoryRepository.save(history); // 保存更改
-                logger.info("將一次性消耗紀錄設為過期，ID {}, 起效日期 {}", history.getId(), history.getEffectiveDate());
-            }
-        }
-
-        logger.info("完成一次性消耗，SiteMaterial ID {}, 消耗數量 {}, 起效日期 {}", siteMaterial.getId(), consumeAmount, effectiveDate);
-    }
-
-    /**
-     * 處理每日（DAILY）消耗邏輯。
-     *
-     * @param siteMaterial 對應的 SiteMaterial
-     * @param consumeAmount 消耗的數量
-     * @param effectiveDate 消耗的起效日期
-     */
-    @Transactional
-    public void handleDailyConsumption(SiteMaterial siteMaterial, float consumeAmount, Timestamp effectiveDate) {
-        // 1. 查詢該 SiteMaterial 的所有 DAILY 消耗紀錄
-        List<ConsumptionHistory> histories = consumptionHistoryRepository.findBySiteMaterialAndConsumeType(siteMaterial, ConsumeType.DAILY);
-
-        // 2. 將早於 effectiveDate 且尚未過期的紀錄設為過期
-        for (ConsumptionHistory history : histories) {
-            if (!history.getExpired() && history.getEffectiveDate().before(effectiveDate)) {
-                history.setExpired(true);
-                consumptionHistoryRepository.save(history);
-            }
-        }
-
-        // 3. 執行每日消耗邏輯
-        executeDailyConsumption(siteMaterial, consumeAmount);
-    }
-
 
 
 

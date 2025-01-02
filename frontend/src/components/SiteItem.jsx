@@ -15,13 +15,25 @@ const SiteItem = ({ site, onDelete }) => {
         marginBottom: "16px",
       }}
     >
-      <Typography variant="h6">工地名稱: {site.siteName}</Typography>
+      {/* 工地名稱可點擊 */}
+      <Typography
+        variant="h6"
+        sx={{
+          color: "blue",
+          cursor: "pointer",
+          textDecoration: "underline",
+        }}
+        onClick={() => navigate(`/sites/${site.id}/detail`)}
+      >
+        {site.siteName}
+      </Typography>
       <Typography>地址: {site.address}</Typography>
       <Typography>狀態: {getSiteStatusLabel(site.status)}</Typography>
       <Typography>描述: {site.description || "無"}</Typography>
       <Typography>緯度: {site.latitude}, 經度: {site.longitude}</Typography>
 
       <Box sx={{ marginTop: "16px", display: "flex", gap: "8px" }}>
+        {/* 編輯按鈕 */}
         <Button
           variant="contained"
           color="primary"
@@ -29,6 +41,7 @@ const SiteItem = ({ site, onDelete }) => {
         >
           編輯
         </Button>
+        {/* 刪除按鈕 */}
         <Button
           variant="contained"
           color="error"
@@ -36,6 +49,22 @@ const SiteItem = ({ site, onDelete }) => {
         >
           刪除
         </Button>
+        {/* 派發按鈕 */}
+        <Button
+          variant="contained"
+          color="success"
+          onClick={() => navigate(`/sites/${site.id}/dispatch`)}
+        >
+          派發
+        </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={() => navigate(`/sites/${site.id}/consume`)}
+        >
+          消耗
+        </Button>
+
       </Box>
     </Box>
   );

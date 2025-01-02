@@ -1,6 +1,7 @@
 package com.wellan.Construction_Management_System.dto;
 
 import com.wellan.Construction_Management_System.entity.ConsumptionHistory;
+import com.wellan.Construction_Management_System.entity.MaterialUnit;
 import com.wellan.Construction_Management_System.entity.SiteMaterial;
 
 import java.util.List;
@@ -8,6 +9,8 @@ import java.util.List;
 public class SiteMaterialDetailDTO {
         private Integer siteMaterialId;
         private Integer materialId;
+        private String materialName;
+        private String materialUnit;
         private Float stock;
         private Float alert;
         private List<ConsumptionHistoryDTO> consumptionHistory;
@@ -18,9 +21,11 @@ public class SiteMaterialDetailDTO {
     protected SiteMaterialDetailDTO() {
     }
 
-    private SiteMaterialDetailDTO(Integer siteMaterialId, Integer materialId, Float stock, Float alert, List<ConsumptionHistoryDTO> consumptionHistory) {
+    private SiteMaterialDetailDTO(Integer siteMaterialId, Integer materialId, String materialName,String materialUnit,Float stock, Float alert, List<ConsumptionHistoryDTO> consumptionHistory) {
         this.siteMaterialId = siteMaterialId;
         this.materialId = materialId;
+        this.materialName = materialName;
+        this.materialUnit =materialUnit;
         this.stock = stock;
         this.alert = alert;
         this.consumptionHistory = consumptionHistory;
@@ -29,6 +34,8 @@ public class SiteMaterialDetailDTO {
         return new SiteMaterialDetailDTO(
                 siteMaterial.getId(),
                 siteMaterial.getMaterial().getId(),
+                siteMaterial.getMaterial().getMaterialName(),
+                siteMaterial.getMaterial().getUnit().getFriendlyName(),
                 siteMaterial.getStock(),
                 siteMaterial.getAlert(),
                 siteMaterial.getConsumptionHistories().stream()
@@ -51,6 +58,22 @@ public class SiteMaterialDetailDTO {
 
     public void setMaterialId(Integer materialId) {
         this.materialId = materialId;
+    }
+
+    public String getMaterialName() {
+        return materialName;
+    }
+
+    public void setMaterialName(String materialName) {
+        this.materialName = materialName;
+    }
+
+    public String getMaterialUnit() {
+        return materialUnit;
+    }
+
+    public void setMaterialUnit(String materialUnit) {
+        this.materialUnit = materialUnit;
     }
 
     public Float getStock() {
