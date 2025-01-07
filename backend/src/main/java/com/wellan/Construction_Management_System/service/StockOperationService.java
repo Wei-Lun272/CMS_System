@@ -38,61 +38,39 @@ public class StockOperationService {
     }
 
     /**
-     * 批量派發原物料到指定工地，並返回工地詳細信息。
+     * 執行批量派發，並記錄派發歷史。
      *
-     * @param siteId      工地 ID
+     * @param siteId 工地 ID
      * @param dispatchList 派發請求的原物料清單
-     * @return 工地詳細信息 SiteDetailDTO
      */
     @Transactional
     public Integer batchDispatchMaterials(int siteId, List<SingleDispatchDTO> dispatchList) {
-        logger.info("收到工地 ID {} 的批量派發請求: {}", siteId, dispatchList);
+        logger.info("執行工地 ID {} 的批量派發請求: {}", siteId, dispatchList);
 
-        // 確認工地是否存在
         Site site = siteRepository.findById(siteId)
-                .orElseThrow(() -> {
-                    logger.warn("工地 ID {} 不存在", siteId);
-                    return new IllegalArgumentException("指定的工地不存在");
-                });
+                .orElseThrow(() -> new IllegalArgumentException("指定的工地不存在"));
 
         for (SingleDispatchDTO singleDispatch : dispatchList) {
-            // 查找對應的原物料
             Material material = materialRepository.findById(singleDispatch.getMaterialId())
-                    .orElseThrow(() -> {
-                        logger.warn("原物料 ID {} 不存在", singleDispatch.getMaterialId());
-                        return new IllegalArgumentException("指定的原物料不存在");
-                    });
+                    .orElseThrow(() -> new IllegalArgumentException("原物料 ID 不存在: " + singleDispatch.getMaterialId()));
 
-            // 查找或創建 SiteMaterial
             SiteMaterial siteMaterial = siteMaterialRepository.findBySiteAndMaterial(site, material)
-                    .orElseGet(() -> {
-                        SiteMaterial newSiteMaterial = SiteMaterial.createClearSiteMaterial(
-                                site,
-                                material,
-                                0.0F,
-                                singleDispatch.getAlertAmount()
-                        );
-                        return siteMaterialRepository.save(newSiteMaterial);
-                    });
+                    .orElseThrow(() -> new IllegalArgumentException("指定的工地與原物料關係不存在"));
 
-            // 更新 SiteMaterial 的庫存
+            // 更新庫存並記錄派發
             executeDispatch(siteMaterial, singleDispatch.getDispatchAmount());
 
-            // 記錄消耗歷史
-            ConsumptionHistory consumptionHistory = new ConsumptionHistory(
+            ConsumptionHistory history = new ConsumptionHistory(
                     siteMaterial,
                     singleDispatch.getDispatchAmount(),
-                    singleDispatch.getConsumeType(),
-                    singleDispatch.getEffectiveDate()
+                    ConsumeType.DISPATCH,
+                    new Timestamp(System.currentTimeMillis()) // 當天日期
             );
-            consumptionHistoryRepository.save(consumptionHistory);
-
-            logger.info("成功派發: 工地 ID {}, 原物料 ID {}, 數量 {}, 消耗類型 {}, 生效日期 {}",
-                    site.getId(), material.getId(), singleDispatch.getDispatchAmount(),
-                    singleDispatch.getConsumeType(), singleDispatch.getEffectiveDate());
+            consumptionHistoryRepository.save(history);
+            logger.info("派發完成，工地 ID: {}, 原物料 ID: {}, 數量: {}", siteId, material.getId(), singleDispatch.getDispatchAmount());
         }
-
         return siteId;
+
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -160,31 +138,34 @@ public class StockOperationService {
 
 
     /**
-     * 執行庫存的實際變動操作。
-     * 更新 SiteMaterial 的庫存，並記錄對應的庫存變動快照。
+     * 更新庫存，並記錄快照。
      *
-     * @param siteMaterial 要消耗的 SiteMaterial 物件
-     * @param dispatchAmount 派發的數量
+     * @param siteMaterial 工地原物料關係
+     * @param dispatchAmount 派發數量
      */
+    @Transactional
     public void executeDispatch(SiteMaterial siteMaterial, float dispatchAmount) {
         float previousStock = siteMaterial.getStock();
         float newStock = previousStock + dispatchAmount;
 
-        // 更新 SiteMaterial 的庫存
+        // 更新庫存
         siteMaterial.setStock(newStock);
         siteMaterialRepository.save(siteMaterial);
 
-        // 紀錄庫存快照
+        // 記錄庫存快照
         InventorySnapshot snapshot = new InventorySnapshot(
                 siteMaterial,
                 previousStock,
                 newStock,
                 ConsumeType.DISPATCH,
                 new Timestamp(System.currentTimeMillis()),
-                "派發庫存變動"
+                "派發更新"
         );
         inventorySnapshotRepository.save(snapshot);
+
+        logger.info("更新庫存完成，原物料 ID: {}, 原庫存: {}, 新庫存: {}", siteMaterial.getMaterial().getId(), previousStock, newStock);
     }
+
 
     @Transactional
     public void handleOnceConsumption(SiteMaterial siteMaterial, float consumeAmount, Timestamp effectiveDate) {
@@ -252,6 +233,8 @@ public class StockOperationService {
 
         // 更新 SiteMaterial 的庫存
         siteMaterial.setStock(newStock);
+        //更新SiteMaterial的最後執行時間
+        updateLastDailyTaskExecutionDate(siteMaterial);
         siteMaterialRepository.save(siteMaterial);
 
         // 紀錄庫存變動快照
@@ -312,6 +295,110 @@ public class StockOperationService {
         logger.info("收到請求ID為{}的SiteMaterial庫存變動紀錄",siteMaterial.getId());
         List<ConsumptionHistory> bySiteMaterial = consumptionHistoryRepository.findBySiteMaterial(siteMaterial);
         return bySiteMaterial;
+    }
+
+    /**
+     * 更新siteMaterial的LastDailyTaskExecutionDate，以便進行更新時的驗證
+     * @param siteMaterial
+     */
+    @Transactional
+    public void updateLastDailyTaskExecutionDate(SiteMaterial siteMaterial) {
+        siteMaterial.setLastDailyTaskExecutionDate(new Timestamp(System.currentTimeMillis()));
+        siteMaterialRepository.save(siteMaterial);
+    }
+    /**
+     * 檢測派發請求是否與當天的紀錄重複。
+     *
+     * @param siteId 工地 ID
+     * @param dispatchList 派發請求的原物料清單
+     * @return 重複派發的詳細資訊
+     */
+    public List<ConsumptionHistory> detectDuplicateDispatches(int siteId, List<SingleDispatchDTO> dispatchList) {
+        logger.info("檢測工地 ID {} 的重複派發請求: {}", siteId, dispatchList);
+
+        List<ConsumptionHistory> duplicateHistories = new ArrayList<>();
+
+        Site site = siteRepository.findById(siteId)
+                .orElseThrow(() -> new IllegalArgumentException("指定的工地不存在"));
+
+        for (SingleDispatchDTO singleDispatch : dispatchList) {
+            Material material = materialRepository.findById(singleDispatch.getMaterialId())
+                    .orElseThrow(() -> new IllegalArgumentException("原物料 ID 不存在: " + singleDispatch.getMaterialId()));
+
+            // 查詢當天是否已有相同原物料與數量的派發紀錄
+            List<ConsumptionHistory> existingHistories = consumptionHistoryRepository.findBySiteMaterialAndConsumeTypeAndEffectiveDate(
+                    siteMaterialRepository.findBySiteAndMaterial(site, material)
+                            .orElseThrow(() -> new IllegalArgumentException("指定的工地與原物料關係不存在")),
+                    ConsumeType.DISPATCH,
+                    new Timestamp(System.currentTimeMillis()) // 當天日期
+            );
+
+            for (ConsumptionHistory history : existingHistories) {
+                if (history.getAmount() == singleDispatch.getDispatchAmount()) {
+                    duplicateHistories.add(history);
+                }
+            }
+        }
+
+        logger.info("檢測完成，找到 {} 條重複派發紀錄", duplicateHistories.size());
+        return duplicateHistories;
+    }
+    /**
+     * 更新尚未生效且未過期的消耗紀錄（派發或單次消耗）。
+     *
+     * @param historyId 消耗紀錄的 ID
+     * @param newAmount 新的數量
+     * @param newEffectiveDate 新的生效日期
+     * @return 更新後的 {@link ConsumptionHistory} 物件
+     * @throws IllegalArgumentException 如果紀錄已過期或已生效，或指定的紀錄不存在
+     * @see ConsumptionHistory
+     */
+    @Transactional
+    public ConsumptionHistory updatePendingConsumptionHistory(
+            int historyId,
+            float newAmount,
+            Timestamp newEffectiveDate
+    ) {
+        // 查找對應的紀錄
+        ConsumptionHistory history = consumptionHistoryRepository.findById(historyId)
+                .orElseThrow(() -> new IllegalArgumentException("未找到對應的消耗紀錄"));
+
+        // 確認紀錄未過期且尚未生效
+        Timestamp today = new Timestamp(System.currentTimeMillis());
+        if (history.getExpired() || history.getEffectiveDate().before(today)) {
+            throw new IllegalArgumentException("無法修改已生效或過期的消耗紀錄");
+        }
+
+        // 更新紀錄數據
+        logger.info("更新消耗紀錄 ID: {}, 原數量: {}, 新數量: {}, 原生效日期: {}, 新生效日期: {}",
+                historyId, history.getAmount(), newAmount, history.getEffectiveDate(), newEffectiveDate);
+
+        history.setAmount(newAmount);
+        history.setEffectiveDate(newEffectiveDate);
+
+        return consumptionHistoryRepository.save(history);
+    }
+    /**
+     * 刪除尚未生效且未過期的消耗紀錄（派發或單次消耗）。
+     *
+     * @param historyId 消耗紀錄的 ID
+     * @throws IllegalArgumentException 如果紀錄已過期或已生效，或指定的紀錄不存在
+     * @see ConsumptionHistory
+     */
+    @Transactional
+    public void deletePendingConsumptionHistory(int historyId) {
+        // 查找對應的紀錄
+        ConsumptionHistory history = consumptionHistoryRepository.findById(historyId)
+                .orElseThrow(() -> new IllegalArgumentException("未找到對應的消耗紀錄"));
+
+        // 確認紀錄未過期且尚未生效
+        Timestamp today = new Timestamp(System.currentTimeMillis());
+        if (history.getExpired() || history.getEffectiveDate().before(today)) {
+            throw new IllegalArgumentException("無法刪除已生效或過期的消耗紀錄");
+        }
+
+        logger.info("刪除消耗紀錄 ID: {}, 數量: {}, 生效日期: {}", historyId, history.getAmount(), history.getEffectiveDate());
+        consumptionHistoryRepository.delete(history);
     }
 
 }

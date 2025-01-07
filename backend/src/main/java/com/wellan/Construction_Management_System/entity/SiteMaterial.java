@@ -4,6 +4,7 @@ import com.wellan.Construction_Management_System.entity.baseEntity.BaseFullDateB
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -49,6 +50,8 @@ public class SiteMaterial extends BaseFullDateBean {
     @Min(value = 0,message = "警戒值不得為負數")
     @Column(name = "alert",nullable = false)
     private float alert;
+    @Column(name = "last_daily_task_execution_date")
+    private Timestamp lastDailyTaskExecutionDate;
 
     @OneToMany(mappedBy = "siteMaterial", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ConsumptionHistory> consumptionHistories = new ArrayList<>();
@@ -104,8 +107,10 @@ public class SiteMaterial extends BaseFullDateBean {
 
 
 
-    public static SiteMaterial createClearSiteMaterial(Site site, Material material, Float stock, Float alert){
-        return new SiteMaterial(site,material,stock,alert);
+    public static SiteMaterial createClearSiteMaterial(Site site, Material material, Float stock, Float alert,Timestamp timestamp){
+        SiteMaterial siteMaterial = new SiteMaterial(site, material, stock, alert);
+        siteMaterial.setLastDailyTaskExecutionDate(timestamp);
+        return siteMaterial;
     }
     public Integer getId() {
         return id;
@@ -151,6 +156,14 @@ public class SiteMaterial extends BaseFullDateBean {
 
     public void setConsumptionHistories(List<ConsumptionHistory> consumptionHistories) {
         this.consumptionHistories = consumptionHistories;
+    }
+
+    public Timestamp getLastDailyTaskExecutionDate() {
+        return lastDailyTaskExecutionDate;
+    }
+
+    public void setLastDailyTaskExecutionDate(Timestamp lastDailyTaskExecutionDate) {
+        this.lastDailyTaskExecutionDate = lastDailyTaskExecutionDate;
     }
 
     @Override

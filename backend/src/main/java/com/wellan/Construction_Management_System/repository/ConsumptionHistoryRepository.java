@@ -13,4 +13,5 @@ public interface ConsumptionHistoryRepository extends JpaRepository<ConsumptionH
 
     List<ConsumptionHistory> findBySiteMaterialAndConsumeType(SiteMaterial siteMaterial, ConsumeType consumeType);
     List<ConsumptionHistory> findByEffectiveDateAndExpired(Timestamp timestamp,boolean expired);
+    List<ConsumptionHistory> findBySiteMaterialAndConsumeTypeAndEffectiveDate(SiteMaterial siteMaterial,ConsumeType consumeType,Timestamp effectiveDate);
 }
