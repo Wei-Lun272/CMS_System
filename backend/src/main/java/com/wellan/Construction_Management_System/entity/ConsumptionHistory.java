@@ -29,6 +29,16 @@ public class ConsumptionHistory extends BaseCreatedDateBean {
 
     @Column(name = "expired")
     private Boolean expired;
+    @Column(name = "expiration_date")
+    private Timestamp expirationDate;
+
+    public Timestamp getExpirationDate() {
+        return expirationDate;
+    }
+
+    public void setExpirationDate(Timestamp expirationDate) {
+        this.expirationDate = expirationDate;
+    }
 
     protected ConsumptionHistory(){}
 

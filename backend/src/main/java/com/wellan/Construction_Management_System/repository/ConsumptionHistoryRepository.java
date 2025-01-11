@@ -14,4 +14,17 @@ public interface ConsumptionHistoryRepository extends JpaRepository<ConsumptionH
     List<ConsumptionHistory> findBySiteMaterialAndConsumeType(SiteMaterial siteMaterial, ConsumeType consumeType);
     List<ConsumptionHistory> findByEffectiveDateAndExpired(Timestamp timestamp,boolean expired);
     List<ConsumptionHistory> findBySiteMaterialAndConsumeTypeAndEffectiveDate(SiteMaterial siteMaterial,ConsumeType consumeType,Timestamp effectiveDate);
+    /**
+     * 查找指定原物料的未來單次消耗與派發事件。
+     *
+     * @param siteMaterial   原物料-工地關係
+     * @param consumeTypes   消耗類型（單次消耗與派發）
+     * @param afterDate      查詢起始日期
+     * @return 符合條件的消耗與派發歷史
+     */
+    List<ConsumptionHistory> findBySiteMaterialAndConsumeTypeInAndEffectiveDateAfter(
+            SiteMaterial siteMaterial,
+            List<ConsumeType> consumeTypes,
+            Timestamp afterDate
+    );
 }
