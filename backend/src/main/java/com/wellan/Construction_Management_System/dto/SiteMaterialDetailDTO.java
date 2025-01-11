@@ -30,7 +30,19 @@ public class SiteMaterialDetailDTO {
         this.alert = alert;
         this.consumptionHistory = consumptionHistory;
     }
-    public static SiteMaterialDetailDTO createFromSiteMaterial(SiteMaterial siteMaterial){
+    /**
+     * 從 SiteMaterial 生成對應的 SiteMaterialDetailDTO。
+     *
+     * @param siteMaterial 原物料與工地的關係物件
+     * @return 對應的 SiteMaterialDetailDTO
+     */
+    public static SiteMaterialDetailDTO createFromSiteMaterial(SiteMaterial siteMaterial) {
+        // 使用 stream 進行排序並生成 DTO
+        List<ConsumptionHistoryDTO> sortedConsumptionHistories = siteMaterial.getConsumptionHistories().stream()
+                .sorted((history1, history2) -> history2.getEffectiveDate().compareTo(history1.getEffectiveDate())) // 按生效日期降冪排序
+                .map(ConsumptionHistoryDTO::fromConsumptionHistory) // 將每個 ConsumptionHistory 轉為 DTO
+                .toList(); // 收集結果為列表
+
         return new SiteMaterialDetailDTO(
                 siteMaterial.getId(),
                 siteMaterial.getMaterial().getId(),
@@ -38,10 +50,8 @@ public class SiteMaterialDetailDTO {
                 siteMaterial.getMaterial().getUnit().getFriendlyName(),
                 siteMaterial.getStock(),
                 siteMaterial.getAlert(),
-                siteMaterial.getConsumptionHistories().stream()
-                        .map(ConsumptionHistoryDTO::fromConsumptionHistory) // 將每個 ConsumptionHistory 轉換為 DTO
-                        .toList() // 收集為一個列表
-                );
+                sortedConsumptionHistories
+        );
     }
 
     public Integer getSiteMaterialId() {

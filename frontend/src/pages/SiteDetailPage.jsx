@@ -8,24 +8,37 @@ import {
   Button,
   IconButton,
   Collapse,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
-import { ExpandMore, ExpandLess } from "@mui/icons-material";
+import { ExpandMore, ExpandLess, Edit, Delete } from "@mui/icons-material";
 
 export default function SiteDetailPage() {
-  const { id } = useParams(); // 獲取工地 ID
+  const { id } = useParams();
   const navigate = useNavigate();
   const [siteDetail, setSiteDetail] = useState(null);
   const [error, setError] = useState(null);
-  const [expanded, setExpanded] = useState({}); // 控制消耗紀錄展開狀態
+  const [expanded, setExpanded] = useState({});
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [currentEdit, setCurrentEdit] = useState(null);
 
-  // 載入工地詳細資料
   useEffect(() => {
     const fetchSiteDetail = async () => {
       try {
         const response = await fetch(`http://localhost:8080/sites/${id}/detail`);
         if (!response.ok) throw new Error("無法加載工地詳細資料。");
         const data = await response.json();
-        setSiteDetail(data);
+        const updatedMaterials = data.materials.map((material) => ({
+          ...material,
+          consumptionHistory: material.consumptionHistory.map((history) => ({
+            ...history,
+            expired: Boolean(history.expired),
+          })),
+        }));
+        setSiteDetail({ ...data, materials: updatedMaterials });
       } catch (err) {
         setError(err.message);
       }
@@ -36,6 +49,78 @@ export default function SiteDetailPage() {
 
   const toggleExpand = (materialId) => {
     setExpanded((prev) => ({ ...prev, [materialId]: !prev[materialId] }));
+  };
+
+  const handleEditOpen = (record) => {
+    if (!record.expired) {
+      setCurrentEdit(record);
+      setEditDialogOpen(true);
+    }
+  };
+
+  const handleEditClose = () => {
+    setEditDialogOpen(false);
+    setCurrentEdit(null);
+  };
+
+  const handleEditSave = async () => {
+    if (!currentEdit) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/consumption-histories/${currentEdit.historyId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            newAmount: currentEdit.amount,
+            newEffectiveDate: currentEdit.effectiveDate,
+          }),
+        }
+      );
+      if (!response.ok) throw new Error("更新失敗。");
+
+      setSiteDetail((prev) => {
+        const updatedMaterials = prev.materials.map((material) => ({
+          ...material,
+          consumptionHistory: material.consumptionHistory.map((history) =>
+            history.historyId === currentEdit.historyId ? currentEdit : history
+          ),
+        }));
+        return { ...prev, materials: updatedMaterials };
+      });
+
+      handleEditClose();
+      alert("更新成功！");
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDelete = async (historyId) => {
+    if (!window.confirm("確定要刪除此消耗紀錄嗎？")) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/consumption-histories/${historyId}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) throw new Error("刪除失敗。");
+
+      setSiteDetail((prev) => {
+        const updatedMaterials = prev.materials.map((material) => ({
+          ...material,
+          consumptionHistory: material.consumptionHistory.filter(
+            (history) => history.historyId !== historyId
+          ),
+        }));
+        return { ...prev, materials: updatedMaterials };
+      });
+
+      alert("刪除成功！");
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   if (error) {
@@ -101,12 +186,12 @@ export default function SiteDetailPage() {
                 <Paper elevation={1} sx={{ padding: 2 }}>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Box>
-                    <Typography sx={{ flexShrink: 0, width: "200px", fontWeight: "bold" }}>
-          {material.materialName}
-        </Typography>
-        <Typography sx={{ flexShrink: 0, color: "gray" }}>
-          單位：{material.materialUnit}
-        </Typography>
+                      <Typography sx={{ flexShrink: 0, width: "200px", fontWeight: "bold" }}>
+                        {material.materialName}
+                      </Typography>
+                      <Typography sx={{ flexShrink: 0, color: "gray" }}>
+                        單位：{material.materialUnit}
+                      </Typography>
                       <Typography>
                         <strong>庫存:</strong> {material.stock}
                       </Typography>
@@ -136,10 +221,39 @@ export default function SiteDetailPage() {
                         <Typography>無消耗紀錄。</Typography>
                       ) : (
                         material.consumptionHistory.map((history) => (
-                          <Typography key={history.historyId} sx={{ marginLeft: 2 }}>
-                            - {history.consumeType}: {history.amount} (生效日期:{" "}
-                            {new Date(history.effectiveDate).toLocaleDateString()})
-                          </Typography>
+                          <Box
+                            key={history.historyId}
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px",
+                              backgroundColor: history.expired ? "#f0f0f0" : "#fff",
+                              borderRadius: "4px",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            <Typography sx={{ flex: 1, marginLeft: 2 }}>
+                              - {history.consumeType}: {history.amount} (生效日期:{" "}
+                              {new Date(history.effectiveDate).toLocaleDateString()})
+                            </Typography>
+                            {!history.expired && (
+                              <Box sx={{ display: "flex", gap: 1 }}>
+                                <IconButton
+                                  onClick={() => handleEditOpen(history)}
+                                  color="primary"
+                                >
+                                  <Edit />
+                                </IconButton>
+                                <IconButton
+                                  onClick={() => handleDelete(history.historyId)}
+                                  color="error"
+                                >
+                                  <Delete />
+                                </IconButton>
+                              </Box>
+                            )}
+                          </Box>
                         ))
                       )}
                     </Box>
@@ -160,6 +274,44 @@ export default function SiteDetailPage() {
           </Button>
         </Box>
       </Paper>
-    </Box>
-  );
-}
+
+      {currentEdit && (
+        <Dialog open={editDialogOpen} onClose={handleEditClose}>
+          <DialogTitle>更新紀錄</DialogTitle>
+          <DialogContent>
+            <TextField
+              label="消耗數量"
+              type="number"
+              value={currentEdit.amount}
+              onChange={(e) =>
+                setCurrentEdit({ ...currentEdit, amount: parseFloat(e.target.value) })
+              }
+              fullWidth
+              margin="normal"
+              />
+              <TextField
+                label="生效日期"
+                type="date"
+                value={currentEdit.effectiveDate}
+                onChange={(e) =>
+                  setCurrentEdit({ ...currentEdit, effectiveDate: e.target.value })
+                }
+                fullWidth
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleEditClose} color="secondary">
+                取消
+              </Button>
+              <Button onClick={handleEditSave} color="primary">
+                保存
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
+      </Box>
+    );
+  }
+  
