@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -8,37 +7,33 @@ import {
   Button,
   IconButton,
   Collapse,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
 } from "@mui/material";
-import { ExpandMore, ExpandLess, Edit, Delete } from "@mui/icons-material";
+import {
+  ExpandMore,
+  ExpandLess,
+  Edit,
+  Delete,
+  WarningAmber, // 警告圖示
+} from "@mui/icons-material";
+import { useNavigate, useParams } from "react-router-dom";
 
-export default function SiteDetailPage() {
-  const { id } = useParams();
+const SiteDetailPage = () => {
+  const { id } = useParams(); // 工地 ID
   const navigate = useNavigate();
+
   const [siteDetail, setSiteDetail] = useState(null);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState({});
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [currentEdit, setCurrentEdit] = useState(null);
+  const [alertPredictions, setAlertPredictions] = useState([]); // 警戒預測資料
 
+  // 1. 取得工地詳細資料
   useEffect(() => {
     const fetchSiteDetail = async () => {
       try {
         const response = await fetch(`http://localhost:8080/sites/${id}/detail`);
         if (!response.ok) throw new Error("無法加載工地詳細資料。");
         const data = await response.json();
-        const updatedMaterials = data.materials.map((material) => ({
-          ...material,
-          consumptionHistory: material.consumptionHistory.map((history) => ({
-            ...history,
-            expired: Boolean(history.expired),
-          })),
-        }));
-        setSiteDetail({ ...data, materials: updatedMaterials });
+        setSiteDetail(data);
       } catch (err) {
         setError(err.message);
       }
@@ -47,82 +42,41 @@ export default function SiteDetailPage() {
     fetchSiteDetail();
   }, [id]);
 
-  const toggleExpand = (materialId) => {
-    setExpanded((prev) => ({ ...prev, [materialId]: !prev[materialId] }));
-  };
+  // 2. 取得警戒預測資料
+  useEffect(() => {
+    const fetchAlertPredictions = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/sites/${id}/alert-predictions`);
+        if (!response.ok) throw new Error("無法獲取警戒預測資料。");
+        const data = await response.json();
+        setAlertPredictions(data);
+      } catch (err) {
+        console.error("獲取警戒預測失敗:", err);
+      }
+    };
 
-  const handleEditOpen = (record) => {
-    if (!record.expired) {
-      setCurrentEdit(record);
-      setEditDialogOpen(true);
+    fetchAlertPredictions();
+  }, [id]);
+
+  // 3. 判斷是否為警戒狀態（14 天內）
+  const isAlert = (materialId) => {
+    const prediction = alertPredictions.find((p) => p.materialId === materialId);
+    if (prediction && prediction.alertDate) {
+      // 計算距離當前日期的天數
+      const alertDate = new Date(prediction.alertDate);
+      const currentDate = new Date();
+      const diffInDays = (alertDate - currentDate) / (1000 * 3600 * 24);
+  
+      // 假設我們改成 diffInDays < 14
+      return diffInDays < 14;
     }
+  
+    // 若 alertDate 為 null 或找不到預測，就 return false
+    return false;
   };
+  
 
-  const handleEditClose = () => {
-    setEditDialogOpen(false);
-    setCurrentEdit(null);
-  };
-
-  const handleEditSave = async () => {
-    if (!currentEdit) return;
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/consumption-histories/${currentEdit.historyId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            newAmount: currentEdit.amount,
-            newEffectiveDate: currentEdit.effectiveDate,
-          }),
-        }
-      );
-      if (!response.ok) throw new Error("更新失敗。");
-
-      setSiteDetail((prev) => {
-        const updatedMaterials = prev.materials.map((material) => ({
-          ...material,
-          consumptionHistory: material.consumptionHistory.map((history) =>
-            history.historyId === currentEdit.historyId ? currentEdit : history
-          ),
-        }));
-        return { ...prev, materials: updatedMaterials };
-      });
-
-      handleEditClose();
-      alert("更新成功！");
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleDelete = async (historyId) => {
-    if (!window.confirm("確定要刪除此消耗紀錄嗎？")) return;
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/consumption-histories/${historyId}`,
-        { method: "DELETE" }
-      );
-      if (!response.ok) throw new Error("刪除失敗。");
-
-      setSiteDetail((prev) => {
-        const updatedMaterials = prev.materials.map((material) => ({
-          ...material,
-          consumptionHistory: material.consumptionHistory.filter(
-            (history) => history.historyId !== historyId
-          ),
-        }));
-        return { ...prev, materials: updatedMaterials };
-      });
-
-      alert("刪除成功！");
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
+  // 錯誤處理
   if (error) {
     return (
       <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
@@ -133,6 +87,7 @@ export default function SiteDetailPage() {
     );
   }
 
+  // 加載中
   if (!siteDetail) {
     return (
       <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
@@ -146,7 +101,14 @@ export default function SiteDetailPage() {
   return (
     <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
       <Paper elevation={3} sx={{ padding: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        {/* 頁面標題與操作按鈕 */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <Typography variant="h4" gutterBottom>
             工地詳細資料
           </Typography>
@@ -169,11 +131,13 @@ export default function SiteDetailPage() {
           </Box>
         </Box>
 
+        {/* 工地資訊 */}
         <Typography variant="h6">工地名稱: {siteName}</Typography>
         <Typography>地址: {address}</Typography>
         <Typography>狀態: {status}</Typography>
         <Typography>描述: {description || "無"}</Typography>
 
+        {/* 原物料清單 */}
         <Typography variant="h5" sx={{ marginTop: 3 }}>
           原物料清單
         </Typography>
@@ -181,86 +145,129 @@ export default function SiteDetailPage() {
           <Typography>目前無原物料資料。</Typography>
         ) : (
           <Grid container spacing={2} sx={{ marginTop: 2 }}>
-            {materials.map((material) => (
-              <Grid item xs={12} key={material.siteMaterialId}>
-                <Paper elevation={1} sx={{ padding: 2 }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Box>
-                      <Typography sx={{ flexShrink: 0, width: "200px", fontWeight: "bold" }}>
-                        {material.materialName}
-                      </Typography>
-                      <Typography sx={{ flexShrink: 0, color: "gray" }}>
-                        單位：{material.materialUnit}
-                      </Typography>
-                      <Typography>
-                        <strong>庫存:</strong> {material.stock}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          color: "red",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        <strong>警戒值:</strong> {material.alert}
-                      </Typography>
-                    </Box>
-                    <IconButton
-                      onClick={() => toggleExpand(material.siteMaterialId)}
-                      aria-expanded={expanded[material.siteMaterialId]}
-                      aria-label="show more"
+            {materials.map((material) => {
+              // 判斷警戒狀態
+              const alertStatus = isAlert(material.materialId);
+
+              // 找到預測資料
+              const matchedPrediction = alertPredictions.find(
+                (pred) => pred.materialId === material.materialId
+              );
+
+              // 顯示日期或提示
+              let alertDateContent = (
+                <Typography sx={{ color: "green", fontWeight: "bold" }}>
+                  最近14天內不會到達警戒值
+                </Typography>
+              );
+
+              if (matchedPrediction && matchedPrediction.alertDate) {
+                const showDate = new Date(matchedPrediction.alertDate).toLocaleDateString();
+                alertDateContent = (
+                  <Typography sx={{ color: "red", fontWeight: "bold" }}>
+                    <strong>警戒日期:</strong> {showDate}
+                  </Typography>
+                );
+              }
+
+              return (
+                <Grid item xs={12} key={material.siteMaterialId}>
+                  <Paper elevation={1} sx={{ padding: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        backgroundColor: alertStatus ? "#f59b9b" : "#ffffff",
+                        borderRadius: "4px",
+                        padding: 1,
+                      }}
                     >
-                      {expanded[material.siteMaterialId] ? <ExpandLess /> : <ExpandMore />}
-                    </IconButton>
-                  </Box>
-                  <Collapse in={expanded[material.siteMaterialId]} timeout="auto" unmountOnExit>
-                    <Box sx={{ marginTop: 2 }}>
-                      <Typography>
-                        <strong>消耗紀錄:</strong>
-                      </Typography>
-                      {material.consumptionHistory.length === 0 ? (
-                        <Typography>無消耗紀錄。</Typography>
-                      ) : (
-                        material.consumptionHistory.map((history) => (
-                          <Box
-                            key={history.historyId}
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              padding: "8px",
-                              backgroundColor: history.expired ? "#f0f0f0" : "#fff",
-                              borderRadius: "4px",
-                              marginBottom: "8px",
-                            }}
-                          >
-                            <Typography sx={{ flex: 1, marginLeft: 2 }}>
-                              - {history.consumeType}: {history.amount} (生效日期:{" "}
-                              {new Date(history.effectiveDate).toLocaleDateString()})
-                            </Typography>
-                            {!history.expired && (
-                              <Box sx={{ display: "flex", gap: 1 }}>
-                                <IconButton
-                                  onClick={() => handleEditOpen(history)}
-                                  color="primary"
-                                >
-                                  <Edit />
-                                </IconButton>
-                                <IconButton
-                                  onClick={() => handleDelete(history.historyId)}
-                                  color="error"
-                                >
-                                  <Delete />
-                                </IconButton>
-                              </Box>
-                            )}
-                          </Box>
-                        ))
-                      )}
+                      {/* 左側：原物料資訊 */}
+                      <Box>
+                        <Typography sx={{ flexShrink: 0, width: "200px", fontWeight: "bold" }}>
+                          {material.materialName}
+                        </Typography>
+                        <Typography sx={{ flexShrink: 0, color: "gray" }}>
+                          單位：{material.materialUnit}
+                        </Typography>
+                        <Typography>
+                          <strong>庫存:</strong> {material.stock}
+                        </Typography>
+                        <Typography sx={{ color: "red", fontWeight: "bold" }}>
+                          <strong>警戒值:</strong> {material.alert}
+                        </Typography>
+                        {/* 顯示警戒日期或「最近14天內不會到達警戒值」 */}
+                        {alertDateContent}
+                      </Box>
+
+                      {/* 右側：警告圖示 + 展開按鈕 */}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        {/* 若為警戒狀態，就顯示圖示 */}
+                        {alertStatus && (
+                          <WarningAmber sx={{ color: "#ff8400", fontSize: "32px" }} />
+                        )}
+
+                        <IconButton
+                          onClick={() =>
+                            setExpanded((prev) => ({
+                              ...prev,
+                              [material.siteMaterialId]: !prev[material.siteMaterialId],
+                            }))
+                          }
+                          aria-expanded={expanded[material.siteMaterialId]}
+                          aria-label="show more"
+                        >
+                          {expanded[material.siteMaterialId] ? <ExpandLess /> : <ExpandMore />}
+                        </IconButton>
+                      </Box>
                     </Box>
-                  </Collapse>
-                </Paper>
-              </Grid>
-            ))}
+
+                    {/* 下方：消耗紀錄的展開/收合 */}
+                    <Collapse in={expanded[material.siteMaterialId]} timeout="auto" unmountOnExit>
+                      <Box sx={{ marginTop: 2 }}>
+                        <Typography>
+                          <strong>消耗紀錄:</strong>
+                        </Typography>
+                        {material.consumptionHistory.length === 0 ? (
+                          <Typography>無消耗紀錄。</Typography>
+                        ) : (
+                          material.consumptionHistory.map((history) => (
+                            <Box
+                              key={history.historyId}
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "8px",
+                                backgroundColor: history.expired ? "#f0f0f0" : "#fff",
+                                borderRadius: "4px",
+                                marginBottom: "8px",
+                              }}
+                            >
+                              <Typography sx={{ flex: 1, marginLeft: 2 }}>
+                                - {history.consumeType}: {history.amount} (生效日期:{" "}
+                                {new Date(history.effectiveDate).toLocaleDateString()})
+                              </Typography>
+                              {!history.expired && (
+                                <Box sx={{ display: "flex", gap: 1 }}>
+                                  <IconButton color="primary">
+                                    <Edit />
+                                  </IconButton>
+                                  <IconButton color="error">
+                                    <Delete />
+                                  </IconButton>
+                                </Box>
+                              )}
+                            </Box>
+                          ))
+                        )}
+                      </Box>
+                    </Collapse>
+                  </Paper>
+                </Grid>
+              );
+            })}
           </Grid>
         )}
 
@@ -274,44 +281,8 @@ export default function SiteDetailPage() {
           </Button>
         </Box>
       </Paper>
+    </Box>
+  );
+};
 
-      {currentEdit && (
-        <Dialog open={editDialogOpen} onClose={handleEditClose}>
-          <DialogTitle>更新紀錄</DialogTitle>
-          <DialogContent>
-            <TextField
-              label="消耗數量"
-              type="number"
-              value={currentEdit.amount}
-              onChange={(e) =>
-                setCurrentEdit({ ...currentEdit, amount: parseFloat(e.target.value) })
-              }
-              fullWidth
-              margin="normal"
-              />
-              <TextField
-                label="生效日期"
-                type="date"
-                value={currentEdit.effectiveDate}
-                onChange={(e) =>
-                  setCurrentEdit({ ...currentEdit, effectiveDate: e.target.value })
-                }
-                fullWidth
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleEditClose} color="secondary">
-                取消
-              </Button>
-              <Button onClick={handleEditSave} color="primary">
-                保存
-              </Button>
-            </DialogActions>
-          </Dialog>
-        )}
-      </Box>
-    );
-  }
-  
+export default SiteDetailPage;

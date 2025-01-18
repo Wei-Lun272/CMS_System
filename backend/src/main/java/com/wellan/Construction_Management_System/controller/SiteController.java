@@ -1,9 +1,6 @@
 package com.wellan.Construction_Management_System.controller;
 
-import com.wellan.Construction_Management_System.dto.SingleConsumeDTO;
-import com.wellan.Construction_Management_System.dto.SingleDispatchDTO;
-import com.wellan.Construction_Management_System.dto.SiteDetailDTO;
-import com.wellan.Construction_Management_System.dto.SiteMaterialDetailDTO;
+import com.wellan.Construction_Management_System.dto.*;
 import com.wellan.Construction_Management_System.entity.Site;
 import com.wellan.Construction_Management_System.entity.SiteMaterial;
 import com.wellan.Construction_Management_System.service.SiteService;
@@ -16,7 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/sites")
@@ -124,6 +123,30 @@ public class SiteController {
         List<SiteMaterial> materialsFromSite = stockOperationService.getMaterialsFromSite(id);
         List<SiteMaterialDetailDTO> list = materialsFromSite.stream().map(SiteMaterialDetailDTO::createFromSiteMaterial).toList();
         return ResponseEntity.ok(list);
+
+    }
+
+
+    @GetMapping("/{id}/alert")
+    public ResponseEntity<Boolean> getSiteAlertStatus(@PathVariable Integer id) {
+        List<AlertPredictionDTO> predictions = stockOperationService.predictStockAlert(id);
+        logger.info("收到工地 ID {} 的警戒資訊請求", id);
+        // 判斷是否有任一原物料即將低於警戒值
+        boolean hasAlert = predictions.stream().anyMatch(pred -> pred.getAlertDate() != null);
+        logger.info("工地 ID {} 的警戒資訊: {}", id, predictions);
+
+        return ResponseEntity.ok(hasAlert);
+    }
+
+
+    @GetMapping("/{id}/alert-predictions")
+    public List<AlertPredictionDTO> getStockAlertPredictions(@PathVariable int id) {
+        logger.info("收到工地 ID {} 的警戒資訊請求", id);
+
+        List<AlertPredictionDTO> alertPredictionDTOS = stockOperationService.predictStockAlert(id);
+        logger.info("工地 ID {} 的警戒資訊: {}", id, alertPredictionDTOS);
+
+        return alertPredictionDTOS;
 
     }
 

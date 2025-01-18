@@ -413,31 +413,54 @@ public class StockOperationService {
     public List<AlertPredictionDTO> predictStockAlert(int siteId) {
         logger.info("計算工地 ID {} 的庫存警戒日期", siteId);
 
+        // 查詢工地是否存在
         Site site = siteRepository.findById(siteId)
                 .orElseThrow(() -> new IllegalArgumentException("指定的工地不存在"));
 
         List<AlertPredictionDTO> predictions = new ArrayList<>();
+
+        // 查詢工地所有原物料
         List<SiteMaterial> siteMaterials = siteMaterialRepository.findBySite(site);
 
         for (SiteMaterial siteMaterial : siteMaterials) {
             float stock = siteMaterial.getStock();
             float alertValue = siteMaterial.getAlert();
-            Map<Timestamp, Float> dailyConsumptionMap = calculateDailyConsumption(siteMaterial, new Timestamp(System.currentTimeMillis()));
 
-            List<ConsumptionHistory> futureEvents = getFutureConsumptionAndDispatch(siteMaterial);
-            Timestamp alertDate = simulateStockChanges(stock, alertValue, dailyConsumptionMap, futureEvents);
+            // 確保 Lambda 使用的變數是 final
+            Timestamp currentDate = new Timestamp(System.currentTimeMillis());
 
+            // **新增檢查：初始庫存是否已低於警戒值**
+            Timestamp alertDate;
+            if (stock < alertValue) {
+                logger.warn("工地 ID {} 的原物料 {} 初始庫存 ({}) 已低於警戒值 ({})",
+                        siteId, siteMaterial.getMaterial().getMaterialName(), stock, alertValue);
+                alertDate = currentDate;  // 直接設定警戒日為今日
+            } else {
+                // 計算每日消耗
+                Map<Timestamp, Float> dailyConsumptionMap = calculateDailyConsumption(siteMaterial, currentDate);
+
+                // 查詢未來的單次消耗與派發事件
+                List<ConsumptionHistory> futureEvents = getFutureConsumptionAndDispatch(siteMaterial);
+
+                // 模擬未來庫存變化，預測警戒日期
+                alertDate = simulateStockChanges(stock, alertValue, dailyConsumptionMap, futureEvents);
+            }
+
+            // 將結果加入預測清單
             predictions.add(new AlertPredictionDTO(
                     siteMaterial.getMaterial().getId(),
                     siteMaterial.getMaterial().getMaterialName(),
                     stock,
                     alertValue,
-                    dailyConsumptionMap,
+                    calculateDailyConsumption(siteMaterial, currentDate),
                     alertDate
             ));
         }
+
         return predictions;
     }
+
+
     /**
      * 計算未來一段時間內的每日消耗量分佈。
      *
@@ -452,25 +475,33 @@ public class StockOperationService {
         Timestamp currentDate = startDate;
         Timestamp maxDate = Timestamp.valueOf(startDate.toLocalDateTime().plusDays(365)); // 設置最大模擬範圍
 
-        while (currentDate.before(maxDate)) {
+        while (!currentDate.after(maxDate)) {
+            // 確保 Lambda 使用的變數是 final
+            Timestamp finalCurrentDate = currentDate;
+
             float dailyConsumption = 0.0F;
 
             for (ConsumptionHistory history : dailyHistories) {
-                if (isActiveOnDate(history, currentDate)) {
+                if (isActiveOnDate(history, finalCurrentDate)) {
                     dailyConsumption += history.getAmount();
                 }
             }
 
             dailyConsumptionMap.put(currentDate, dailyConsumption);
 
-            // 若未來的每日消耗量為 0，且當前日期已超過所有有效消耗記錄，則退出
+            // 若未來沒有有效的每日消耗紀錄，提前結束
             Timestamp nextDate = Timestamp.valueOf(currentDate.toLocalDateTime().plusDays(1));
-            if (dailyConsumption == 0.0F) {
-                boolean hasFutureActiveRecords = dailyHistories.stream()
-                        .anyMatch(history -> isActiveOnDate(history, nextDate));
-                if (!hasFutureActiveRecords) {
+            boolean hasFutureActiveRecords = false;
+
+            for (ConsumptionHistory history : dailyHistories) {
+                if (isActiveOnDate(history, nextDate)) {
+                    hasFutureActiveRecords = true;
                     break;
                 }
+            }
+
+            if (dailyConsumption == 0.0F && !hasFutureActiveRecords) {
+                break;
             }
 
             currentDate = nextDate; // 更新為下一天
@@ -487,21 +518,22 @@ public class StockOperationService {
      * @return 未來事件的列表，包括單次消耗與派發
      */
     public List<ConsumptionHistory> getFutureConsumptionAndDispatch(SiteMaterial siteMaterial) {
-        // 當前日期
         Timestamp currentDate = new Timestamp(System.currentTimeMillis());
 
-        // 查詢未來的單次消耗和派發事件
         List<ConsumptionHistory> futureEvents = consumptionHistoryRepository.findBySiteMaterialAndConsumeTypeInAndEffectiveDateAfter(
                 siteMaterial,
-                List.of(ConsumeType.ONCE, ConsumeType.DISPATCH), // 查找單次消耗與派發
+                List.of(ConsumeType.ONCE, ConsumeType.DISPATCH),
                 currentDate
         );
 
-        // 排序事件，根據生效日期升序排列
-        futureEvents.sort(Comparator.comparing(ConsumptionHistory::getEffectiveDate));
+        // 排序優化：生效日期 + 類型（DISPATCH 優先）
+        futureEvents.sort(Comparator
+                .comparing(ConsumptionHistory::getEffectiveDate)
+                .thenComparing(event -> event.getConsumeType() == ConsumeType.DISPATCH ? -1 : 1));
 
         return futureEvents;
     }
+
     /**
      * 模擬未來的庫存變化，預測警戒值觸發日期。
      *
@@ -513,36 +545,36 @@ public class StockOperationService {
      */
     public Timestamp simulateStockChanges(float stock, float alertValue, Map<Timestamp, Float> dailyConsumptionMap, List<ConsumptionHistory> futureEvents) {
         Timestamp currentDate = new Timestamp(System.currentTimeMillis());
-        Timestamp alertDate = null;
+        int maxSimulationDays = 90;  // 最大模擬天數
+        int simulatedDays = 0;
 
-        while (stock >= alertValue) {
-            // 減去每日消耗
-            Float dailyConsumption = dailyConsumptionMap.getOrDefault(currentDate, 0.0F);
-            stock -= dailyConsumption;
+        while (stock >= alertValue && simulatedDays < maxSimulationDays) {
+            // 每日消耗
+            stock -= dailyConsumptionMap.getOrDefault(currentDate, 0.0F);
 
-            // 檢查當天的單次消耗與派發事件
+            // 當天的單次消耗與派發
             for (ConsumptionHistory event : futureEvents) {
                 if (event.getEffectiveDate().equals(currentDate)) {
-                    if (event.getConsumeType() == ConsumeType.DISPATCH) {
-                        stock += event.getAmount(); // 派發增加庫存
-                    } else if (event.getConsumeType() == ConsumeType.ONCE) {
-                        stock -= event.getAmount(); // 單次消耗減少庫存
-                    }
+                    stock += event.getConsumeType() == ConsumeType.DISPATCH ? event.getAmount() : -event.getAmount();
                 }
             }
 
-            // 如果庫存低於警戒值，設定警戒日期並停止模擬
             if (stock < alertValue) {
-                alertDate = currentDate;
-                break;
+                return currentDate;
             }
 
-            // 移動到下一天
+            // 前進到下一天
             currentDate = Timestamp.valueOf(currentDate.toLocalDateTime().plusDays(1));
+            simulatedDays++;
         }
 
-        return alertDate;
+        if (simulatedDays >= maxSimulationDays) {
+            logger.warn("模擬已達最大天數 {} 天，停止計算", maxSimulationDays);
+        }
+
+        return null;  // 無法在期限內達到警戒
     }
+
     /**
      * 判斷指定日期是否在消耗記錄的有效範圍內。
      *
@@ -551,17 +583,11 @@ public class StockOperationService {
      * @return 如果記錄在指定日期內有效，返回 true；否則返回 false。
      */
     public boolean isActiveOnDate(ConsumptionHistory history, Timestamp currentDate) {
-        if (history.getExpired()) {
-            return false;
-        }
-        if (currentDate.before(history.getEffectiveDate())) {
-            return false;
-        }
-        if (history.getExpirationDate() != null && currentDate.after(history.getExpirationDate())) {
-            return false;
-        }
-        return true;
+        return !history.getExpired()
+                && !currentDate.before(history.getEffectiveDate())
+                && (history.getExpirationDate() == null || !currentDate.after(history.getExpirationDate()));
     }
+
 }
 
 

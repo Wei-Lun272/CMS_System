@@ -1,10 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Typography, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { getSiteStatusLabel } from "../utils/siteStatusHelper";
 
 const SiteItem = ({ site, onDelete }) => {
   const navigate = useNavigate();
+  const [isAlert, setIsAlert] = useState(false); // 用來存儲警戒狀態
+
+  // 根據 site.id 獲取警戒預測資料
+  useEffect(() => {
+    const fetchAlertStatus = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/sites/${site.id}/alert`);
+        if (!response.ok) throw new Error("無法獲取警戒預測資料。");
+        const data = await response.json();
+        setIsAlert(data); // 設置警戒狀態
+      } catch (err) {
+        console.error("獲取警戒預測失敗:", err);
+      }
+    };
+
+    fetchAlertStatus();
+  }, [site.id]);
 
   return (
     <Box
@@ -13,9 +30,9 @@ const SiteItem = ({ site, onDelete }) => {
         borderRadius: "8px",
         padding: "16px",
         marginBottom: "16px",
+        backgroundColor: isAlert ? "#ffcccc" : "transparent", // 根據警戒狀態設置背景顏色
       }}
     >
-      {/* 工地名稱可點擊 */}
       <Typography
         variant="h6"
         sx={{
@@ -32,8 +49,14 @@ const SiteItem = ({ site, onDelete }) => {
       <Typography>描述: {site.description || "無"}</Typography>
       <Typography>緯度: {site.latitude}, 經度: {site.longitude}</Typography>
 
+      {/* 顯示警戒日期 */}
+      {isAlert && (
+        <Typography sx={{ color: "red", fontWeight: "bold" }}>
+          預計警戒日期: {new Date().toLocaleDateString()}
+        </Typography>
+      )}
+
       <Box sx={{ marginTop: "16px", display: "flex", gap: "8px" }}>
-        {/* 編輯按鈕 */}
         <Button
           variant="contained"
           color="primary"
@@ -41,7 +64,6 @@ const SiteItem = ({ site, onDelete }) => {
         >
           編輯
         </Button>
-        {/* 刪除按鈕 */}
         <Button
           variant="contained"
           color="error"
@@ -49,7 +71,6 @@ const SiteItem = ({ site, onDelete }) => {
         >
           刪除
         </Button>
-        {/* 派發按鈕 */}
         <Button
           variant="contained"
           color="success"
@@ -64,7 +85,6 @@ const SiteItem = ({ site, onDelete }) => {
         >
           消耗
         </Button>
-
       </Box>
     </Box>
   );

@@ -37,7 +37,7 @@ public class SiteService {
         );
 
         // 確認經緯度是否已存在（排除當前正在更新的 Site）
-        if (siteRepository.existsByLatitudeAndLongitudeAndIdNot(updateSite.getLatitude(), updateSite.getLongitude(), id)) {
+        if (siteRepository.existsByLatitudeAndLongitudeAndIdNot(updateSite.getLatitude(), updateSite.getLongitude(), id)&&(updateSite.getLatitude().equals(originSite.getLatitude())&&updateSite.getLongitude().equals(originSite.getLongitude()))) {
             logger.warn("經緯度 (latitude: " + updateSite.getLatitude() + ", longitude: " + updateSite.getLongitude() + ") 已存在，無法更新");
             throw new ResponseStatusException(HttpStatus.CONFLICT, "經緯度已存在，無法更新");
         }
