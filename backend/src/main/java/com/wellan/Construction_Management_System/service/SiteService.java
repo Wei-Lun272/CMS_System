@@ -5,6 +5,8 @@ import com.wellan.Construction_Management_System.repository.SiteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -59,6 +61,11 @@ public class SiteService {
     public List<Site> getAllSite(){
         return siteRepository.findAll();
     }
+    //啟動快取
+    //#id為key
+    //value的siteCache表示快取內的特定命名範圍
+    //綜合來說對應到Redis內就是key為siteCache::#id，比如siteCache::3就是找到siteCache中#id為3的資料
+    @Cacheable(value = "siteCache", key = "#id")
     public Site getSiteById(int id){
         return siteRepository.findById(id).orElseThrow(
                 ()->{
@@ -68,6 +75,7 @@ public class SiteService {
         );
 
     }
+    @CacheEvict(value = "siteCache", key = "#id")
     public void deleteSite(int id){
         if(siteRepository.existsById(id)){
             siteRepository.deleteById(id);

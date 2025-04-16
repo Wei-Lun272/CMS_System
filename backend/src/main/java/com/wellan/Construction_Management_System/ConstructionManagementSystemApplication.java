@@ -6,10 +6,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 
 @EnableJpaAuditing
+@EnableCaching //啟動快取功能
 @SpringBootApplication
 public class ConstructionManagementSystemApplication implements CommandLineRunner {
 	private static final Logger logger = LoggerFactory.getLogger(ConstructionManagementSystemApplication.class);
