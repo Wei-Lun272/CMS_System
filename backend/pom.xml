@@ -52,7 +52,7 @@
 			<artifactId>mysql-connector-java</artifactId>
 			<version>8.0.33</version> <!-- 確保使用最新版本 -->
 		</dependency>
-
+<!--		包含了 JUnit、Mockito 等常用測試工具-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>

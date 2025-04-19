@@ -32,7 +32,7 @@ public class RedisConfig {
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(serializer)
                 )
-                .entryTtl(Duration.ofMinutes(60)) // 預設 TTL
+                .entryTtl(Duration.ofMinutes(60)) // 預設 TTL(過期時間)
                 .disableCachingNullValues();
 
         return RedisCacheManager.builder(factory)

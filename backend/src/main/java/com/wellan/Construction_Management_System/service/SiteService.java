@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,12 +25,15 @@ public class SiteService {
     public SiteService(SiteRepository siteRepository) {
         this.siteRepository = siteRepository;
     }
-
+    //value = "siteList" 表示清除這個快取命名空間（cache name）
+    //allEntries = true 表示「清除此命名空間下的所有 key」
+    @CacheEvict(value = "siteList", allEntries = true)
     public Site addSite(Site newSite){
         Site savedSite = siteRepository.save(newSite);
         logger.info("已新增新工地資訊:{}",newSite.getSiteName());
         return savedSite;
     }
+    @CacheEvict(value = "siteList", allEntries = true)
     public Site updateSiteById(int id, Site updateSite) {
         Site originSite = siteRepository.findById(id).orElseThrow(
                 () -> {
@@ -58,6 +62,8 @@ public class SiteService {
 
         return updatedSite;
     }
+
+    @Cacheable(value = "siteList")
     public List<Site> getAllSite(){
         return siteRepository.findAll();
     }
@@ -75,7 +81,10 @@ public class SiteService {
         );
 
     }
-    @CacheEvict(value = "siteCache", key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = "siteCache", key = "#id"),
+            @CacheEvict(value = "siteList", allEntries = true)
+    })
     public void deleteSite(int id){
         if(siteRepository.existsById(id)){
             siteRepository.deleteById(id);
