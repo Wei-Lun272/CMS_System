@@ -18,6 +18,7 @@ public class InventorySnapshot  {
 
     @ManyToOne
     @JoinColumn(name = "site_material_id", nullable = false)
+
     private SiteMaterial siteMaterial;
 
     @Column(name = "stock_after", nullable = false)
