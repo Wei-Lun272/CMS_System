@@ -2,29 +2,44 @@ package com.wellan.Construction_Management_System.service;
 
 import com.wellan.Construction_Management_System.entity.Site;
 import com.wellan.Construction_Management_System.repository.SiteRepository;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.util.List;
 
 
 @Service
 public class SiteService {
     private final SiteRepository siteRepository;
-
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
     private static final Logger logger = LoggerFactory.getLogger(SiteService.class);
 
     @Autowired
     public SiteService(SiteRepository siteRepository) {
         this.siteRepository = siteRepository;
     }
+    @PostConstruct
+    public void testRedisConnection() {
+        try {
+            redisTemplate.opsForValue().set("test-redis", "Redis連線成功", Duration.ofSeconds(10));
+            Object value = redisTemplate.opsForValue().get("test-redis");
+            System.out.println("🔍 Redis 測試成功，讀取內容為：" + value);
+        } catch (Exception e) {
+            System.err.println("❌ Redis 連線失敗：" + e.getMessage());
+        }
+    }
+
     //value = "siteList" 表示清除這個快取命名空間（cache name）
     //allEntries = true 表示「清除此命名空間下的所有 key」
     @CacheEvict(value = "siteList", allEntries = true)
