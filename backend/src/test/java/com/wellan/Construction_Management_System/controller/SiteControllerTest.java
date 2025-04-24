@@ -12,7 +12,11 @@ import com.wellan.Construction_Management_System.service.SiteService;
 import com.wellan.Construction_Management_System.service.StockOperationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -27,10 +31,15 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
-//@SpringBootTest
-//@ActiveProfiles("test")
-//@AutoConfigureMockMvc
-@WebMvcTest(SiteController.class)
+@WebMvcTest(
+        controllers = SiteController.class,
+        excludeAutoConfiguration = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class
+        }
+)
+@AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 public class SiteControllerTest {
 
     @Autowired
