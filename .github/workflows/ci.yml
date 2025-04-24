@@ -29,15 +29,15 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
           java-version: '17'
+          distribution: 'temurin'
 
-      - name: Cache Maven packages
+      - name: Cache Maven dependencies
         uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
-      - name: Verify and run specific tests
-        run: mvn test -Dtest="com.wellan.Construction_Management_System.controller.SiteControllerTest,com.wellan.Construction_Management_System.service.SiteServiceTest"
+      - name: Run selected tests
+        run: mvn test -Dtest=com.wellan.Construction_Management_System.controller.SiteControllerTest+com.wellan.Construction_Management_System.service.SiteServiceTest
