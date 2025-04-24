@@ -20,25 +20,27 @@ import java.util.List;
 
 @Service
 public class SiteService {
-    private final SiteRepository siteRepository;
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+
     private static final Logger logger = LoggerFactory.getLogger(SiteService.class);
 
+    private final SiteRepository siteRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
     @Autowired
-    public SiteService(SiteRepository siteRepository) {
+    public SiteService(SiteRepository siteRepository, RedisTemplate<String, Object> redisTemplate) {
         this.siteRepository = siteRepository;
+        this.redisTemplate = redisTemplate;
     }
-    @PostConstruct
-    public void testRedisConnection() {
-        try {
-            redisTemplate.opsForValue().set("test-redis", "Redis連線成功", Duration.ofSeconds(10));
-            Object value = redisTemplate.opsForValue().get("test-redis");
-            System.out.println("🔍 Redis 測試成功，讀取內容為：" + value);
-        } catch (Exception e) {
-            System.err.println("❌ Redis 連線失敗：" + e.getMessage());
-        }
-    }
+//    @PostConstruct
+//    public void testRedisConnection() {
+//        try {
+//            redisTemplate.opsForValue().set("test-redis", "Redis連線成功", Duration.ofSeconds(10));
+//            Object value = redisTemplate.opsForValue().get("test-redis");
+//            System.out.println("🔍 Redis 測試成功，讀取內容為：" + value);
+//        } catch (Exception e) {
+//            System.err.println("❌ Redis 連線失敗：" + e.getMessage());
+//        }
+//    }
 
     //value = "siteList" 表示清除這個快取命名空間（cache name）
     //allEntries = true 表示「清除此命名空間下的所有 key」

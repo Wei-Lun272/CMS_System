@@ -1,7 +1,9 @@
 package com.wellan.Construction_Management_System.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wellan.Construction_Management_System.dto.*;
+import com.wellan.Construction_Management_System.dto.AlertPredictionDTO;
+import com.wellan.Construction_Management_System.dto.SingleConsumeDTO;
+import com.wellan.Construction_Management_System.dto.SingleDispatchDTO;
 import com.wellan.Construction_Management_System.entity.ConsumeType;
 import com.wellan.Construction_Management_System.entity.Site;
 import com.wellan.Construction_Management_System.entity.SiteMaterial;
@@ -17,15 +19,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -34,79 +32,71 @@ public class SiteControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockBean
     private SiteService siteService;
 
     @MockBean
     private StockOperationService stockOperationService;
 
-    private String asJsonString(final Object obj) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(obj);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Test
     void testAddSite() throws Exception {
-        Site site = new Site("工地A", "台北", SiteStatus.ONGOING, "新工程");
+        Site site = new Site("工地A", "地址", SiteStatus.ONGOING, "新建案");
         when(siteService.addSite(any(Site.class))).thenReturn(site);
 
         mockMvc.perform(post("/sites")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(site)))
+                        .content(objectMapper.writeValueAsString(site)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.siteName").value("工地A"));
     }
 
     @Test
-    void testFindAllSites() throws Exception {
-        List<Site> siteList = List.of(new Site("A", "地址", SiteStatus.ONGOING, "desc"));
-        when(siteService.getAllSite()).thenReturn(siteList);
+    void testGetAllSites() throws Exception {
+        when(siteService.getAllSite()).thenReturn(List.of(new Site("工地A", "地址", SiteStatus.ONGOING, "描述")));
 
         mockMvc.perform(get("/sites"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].siteName").value("A"));
+                .andExpect(jsonPath("$[0].siteName").value("工地A"));
     }
 
     @Test
-    void testFindSiteById() throws Exception {
-        Site site = new Site("B", "地址", SiteStatus.ONGOING, "desc");
-        when(siteService.getSiteById(3)).thenReturn(site);
+    void testGetSiteById() throws Exception {
+        when(siteService.getSiteById(1)).thenReturn(new Site("工地B", "地址B", SiteStatus.PLANNING, "說明"));
 
-        mockMvc.perform(get("/sites/3"))
+        mockMvc.perform(get("/sites/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.siteName").value("B"));
+                .andExpect(jsonPath("$.siteName").value("工地B"));
     }
 
     @Test
-    void testFindSiteDetailById() throws Exception {
-        Site site = new Site("C", "地址", SiteStatus.ONGOING, "desc");
-        List<SiteMaterial> materials = new ArrayList<>();
+    void testGetSiteDetailById() throws Exception {
+        Site site = new Site("工地C", "地址C", SiteStatus.ONGOING, "備註");
+        List<SiteMaterial> materials = List.of();
         when(siteService.getSiteById(1)).thenReturn(site);
         when(stockOperationService.getMaterialsFromSite(1)).thenReturn(materials);
 
         mockMvc.perform(get("/sites/1/detail"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.siteName").value("C"));
+                .andExpect(jsonPath("$.siteName").value("工地C"));
     }
 
     @Test
     void testUpdateSiteById() throws Exception {
-        Site updatedSite = new Site("更新工地", "新地址", SiteStatus.COMPLETED, "更新描述");
-        when(siteService.updateSiteById(eq(1), any(Site.class))).thenReturn(updatedSite);
+        Site updated = new Site("更新工地", "更新地址", SiteStatus.COMPLETED, "完工說明");
+        when(siteService.updateSiteById(eq(1), any(Site.class))).thenReturn(updated);
 
         mockMvc.perform(put("/sites/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(updatedSite)))
+                        .content(objectMapper.writeValueAsString(updated)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.siteName").value("更新工地"));
     }
 
     @Test
-    void testDeleteSiteById() throws Exception {
+    void testDeleteSite() throws Exception {
         doNothing().when(siteService).deleteSite(1);
 
         mockMvc.perform(delete("/sites/1"))
@@ -114,33 +104,33 @@ public class SiteControllerTest {
     }
 
     @Test
-    void testDispatchMaterialToSite() throws Exception {
+    void testDispatchMaterial() throws Exception {
         List<SingleDispatchDTO> list = List.of(new SingleDispatchDTO());
         when(stockOperationService.batchDispatchMaterials(eq(1), anyList())).thenReturn(1);
 
         mockMvc.perform(post("/sites/1/dispatch")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(list)))
+                        .content(objectMapper.writeValueAsString(list)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("1"));
     }
 
     @Test
-    void testConsumeMaterialsFromSite() throws Exception {
+    void testConsumeMaterial() throws Exception {
         List<SingleConsumeDTO> list = List.of(
-                new SingleConsumeDTO(1, 10f, ConsumeType.ONCE, new Timestamp(System.currentTimeMillis()))
+                new SingleConsumeDTO(1, 5.0f, ConsumeType.ONCE, new Timestamp(System.currentTimeMillis()))
         );
         when(stockOperationService.batchConsumeMaterials(eq(1), anyList())).thenReturn(1);
 
         mockMvc.perform(post("/sites/1/consume")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(list)))
+                        .content(objectMapper.writeValueAsString(list)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("1"));
     }
 
     @Test
-    void testGetMaterialById() throws Exception {
+    void testGetMaterialsBySite() throws Exception {
         when(stockOperationService.getMaterialsFromSite(1)).thenReturn(List.of());
 
         mockMvc.perform(get("/sites/1/materials"))
@@ -149,14 +139,8 @@ public class SiteControllerTest {
 
     @Test
     void testGetSiteAlertStatus() throws Exception {
-        Map<Timestamp, Float> dummyMap = new HashMap<>();
-        dummyMap.put(new Timestamp(System.currentTimeMillis()), 5.0f);
-
-        AlertPredictionDTO alertDto = new AlertPredictionDTO(
-                1, "鋼筋", 100f, 20f, dummyMap, null
-        );
-
-        when(stockOperationService.predictStockAlert(1)).thenReturn(List.of(alertDto));
+        AlertPredictionDTO dto = new AlertPredictionDTO(1, "水泥", 50, 20, new HashMap<>(), null);
+        when(stockOperationService.predictStockAlert(1)).thenReturn(List.of(dto));
 
         mockMvc.perform(get("/sites/1/alert"))
                 .andExpect(status().isOk())
@@ -164,7 +148,7 @@ public class SiteControllerTest {
     }
 
     @Test
-    void testGetStockAlertPredictions() throws Exception {
+    void testGetAlertPredictions() throws Exception {
         when(stockOperationService.predictStockAlert(1)).thenReturn(List.of());
 
         mockMvc.perform(get("/sites/1/alert-predictions"))

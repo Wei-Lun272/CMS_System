@@ -5,12 +5,10 @@ import com.wellan.Construction_Management_System.entity.Site;
 import com.wellan.Construction_Management_System.entity.SiteMaterial;
 import com.wellan.Construction_Management_System.service.SiteService;
 import com.wellan.Construction_Management_System.service.StockOperationService;
-import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,14 +22,8 @@ public class SiteController {
     private final SiteService siteService;
     private final StockOperationService stockOperationService;
     private static final Logger logger = LoggerFactory.getLogger(SiteController.class);
-    @Autowired
-    private Environment environment;
 
-    @PostConstruct
-    public void checkRedis() {
-        System.out.println("🔍 Redis host: " + environment.getProperty("spring.redis.host"));
-        System.out.println("🔍 Redis port: " + environment.getProperty("spring.redis.port"));
-    }
+
     @Autowired
     public SiteController(SiteService siteService, StockOperationService stockOperationService) {
         this.siteService = siteService;

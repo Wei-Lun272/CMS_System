@@ -1,9 +1,11 @@
 package com.wellan.Construction_Management_System.service;
 
 import com.wellan.Construction_Management_System.entity.Site;
+import com.wellan.Construction_Management_System.entity.SiteStatus;
 import com.wellan.Construction_Management_System.repository.SiteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Constructor;
@@ -19,13 +21,15 @@ public class SiteServiceTest {
 
     private SiteRepository siteRepository;
     private SiteService siteService;
+    private RedisTemplate redisTemplate;
 
     @BeforeEach
     void setUp() {
-        //啟動mock
         siteRepository = mock(SiteRepository.class);
-        siteService = new SiteService(siteRepository);
+        redisTemplate = mock(RedisTemplate.class);
+        siteService = new SiteService(siteRepository, redisTemplate);
     }
+
 
     // ✅ 建立 Site 實體（反射）
     private Site createSiteInstance() {
@@ -115,6 +119,9 @@ public class SiteServiceTest {
         updated.setSiteName("更新工地");
         updated.setLatitude(new BigDecimal("26.0"));
         updated.setLongitude(new BigDecimal("122.0"));
+        updated.setAddress("地址");
+        updated.setDescription("描述");
+        updated.setStatus(SiteStatus.PLANNING);
 
         when(siteRepository.findById(1)).thenReturn(Optional.of(oldSite));
         when(siteRepository.existsByLatitudeAndLongitudeAndIdNot(
