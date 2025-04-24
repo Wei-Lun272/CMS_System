@@ -13,8 +13,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.time.Duration;
 import java.util.List;
 
 
@@ -24,6 +22,7 @@ public class SiteService {
     private static final Logger logger = LoggerFactory.getLogger(SiteService.class);
 
     private final SiteRepository siteRepository;
+
     private final RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
