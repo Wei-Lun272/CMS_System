@@ -40,4 +40,7 @@ jobs:
           restore-keys: ${{ runner.os }}-maven-
 
       - name: Run selected tests
-        run: mvn test -Dtest=com.wellan.Construction_Management_System.controller.SiteControllerTest,com.wellan.Construction_Management_System.service.SiteServiceTest
+        run: |
+          mvn -Dtest=com.wellan.Construction_Management_System.controller.SiteControllerTest test
+          mvn -Dtest=com.wellan.Construction_Management_System.service.SiteServiceTest test
+
