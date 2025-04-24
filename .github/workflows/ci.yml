@@ -3,30 +3,38 @@ name: Run CMS JUnit Tests
 on:
   push:
     branches: [ main, dev ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ main, dev ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/**'
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🔄 Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout source code
+        uses: actions/checkout@v3
 
-    - name: ☕ Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
 
-    - name: 📦 Cache Maven Dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: Linux-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            Linux-maven-
 
-    - name: 🧪 Run only SiteControllerTest & SiteServiceTest
-      run: mvn -Dtest=com.wellan.Construction_Management_System.controller.SiteControllerTest,com.wellan.Construction_Management_System.service.SiteServiceTest test
+      - name: Run specific test classes
+        working-directory: ./backend
+        run: |
+          mvn -Dtest=com.wellan.Construction_Management_System.controller.SiteControllerTest,com.wellan.Construction_Management_System.service.SiteServiceTest test
