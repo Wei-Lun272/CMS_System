@@ -5,7 +5,9 @@ import com.wellan.Construction_Management_System.entity.SiteStatus;
 import com.wellan.Construction_Management_System.repository.SiteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Constructor;
@@ -16,7 +18,12 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
+//@SpringBootTest
+//@TestPropertySource(properties = {
+//        "spring.autoconfigure.exclude="
+//                + "org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration,"
+//                + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
+//})
 public class SiteServiceTest {
 
     private SiteRepository siteRepository;

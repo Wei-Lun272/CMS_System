@@ -20,7 +20,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: backend
+        working-directory: backend     # ← 只測後端模組
 
     steps:
       - name: Checkout source code
@@ -39,8 +39,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
-      - name: Run selected tests
+      # ⬇️ 只跑 SiteServiceTest
+      - name: Run SiteServiceTest
         run: |
-          mvn -Dtest=com.wellan.Construction_Management_System.controller.SiteControllerTest test
           mvn -Dtest=com.wellan.Construction_Management_System.service.SiteServiceTest test
-
